@@ -2,6 +2,8 @@
 
 An interactive fan field guide to *The Mandela Catalogue*, the analog horror series by Alex Kister. Next.js app with a SQLite database.
 
+**Live site:** https://mandela-catalogue.vercel.app
+
 ## What you can do with it
 
 **Visitors**
@@ -124,3 +126,14 @@ scripts/seed.ts          content reset script
 Episode data comes from the Wikipedia article. Story dates marked "inferred" are interpretations. The film details come only from Wikipedia and are not confirmed in a news outlet.
 
 The code is released under the [MIT License](LICENSE). That covers the code only. It does not cover *The Mandela Catalogue* itself (footage, characters, designs, names), which belongs to Alex Kister and is not licensed by this project.
+
+## Contributing
+
+Issues and pull requests are welcome. Before you open one:
+
+- Run `npm run typecheck`, `npm test` and `npm run test:libsql`; for anything visible, also `npm run e2e` (see CLAUDE.md for how the tests work). CI runs all of them.
+- Do not add screenshots, frames, character art or anything else from the series. Link to the originals instead.
+- Facts in the guide must trace to a listed source, and anything unconfirmed must say so ("inferred", "unconfirmed").
+- By contributing you agree your code is released under the MIT License above.
+
+Found a mistake in a summary, date or credit? Please open an issue with the source that shows the correct version.

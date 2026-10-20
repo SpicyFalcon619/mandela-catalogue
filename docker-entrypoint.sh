@@ -6,6 +6,7 @@ if [ "$(id -u)" = "0" ]; then
   dir="$(dirname "${DATABASE_PATH:-/data/mandela.db}")"
   mkdir -p "$dir"
   chown -R node:node "$dir"
-  exec runuser -u node -- "$@"
+  # setpriv execs directly (no fork), so the server is PID 1 and receives SIGTERM from the host.
+  exec setpriv --reuid=node --regid=node --init-groups -- "$@"
 fi
 exec "$@"

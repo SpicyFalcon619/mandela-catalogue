@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Typecheck, unit tests, browser tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22 # same major as the Dockerfile
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e # builds, then runs Playwright against the standalone server
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-results
+          path: test-results/
+          retention-days: 7
+
+  docker:
+    name: Docker image builds and reports healthy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compose file is valid
+        run: AUTH_SECRET=ci ADMIN_PASSWORD=ci docker compose config --quiet
+
+      - name: Build image
+        run: docker build -t mandela-catalogue .
+
+      - name: Start container
+        run: |
+          docker run -d --name mc -p 3000:3000 -v mc-data:/data \
+            -e AUTH_SECRET="$(openssl rand -base64 48)" \
+            -e ADMIN_USERNAME=ciadmin -e ADMIN_PASSWORD=ci-admin-password \
+            -e COOKIE_SECURE=false \
+            mandela-catalogue
+
+      - name: Wait for the HEALTHCHECK to pass
+        run: |
+          for i in $(seq 1 40); do
+            status=$(docker inspect --format '{{.State.Health.Status}}' mc)
+            echo "health: $status"
+            [ "$status" = healthy ] && exit 0
+            [ "$(docker inspect --format '{{.State.Running}}' mc)" = true ] || break
+            sleep 3
+          done
+          docker logs mc
+          exit 1
+
+      - name: Smoke test the running container
+        run: |
+          for p in / /tapes/1 /login; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:3000$p")
+            echo "$p $code"; [ "$code" = 200 ] || exit 1
+          done
+          [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/no-such-page)" = 404 ]
+          [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/admin)" = 307 ]
+          echo "runs as: $(docker exec mc id -un)"
+          [ "$(docker exec mc id -un)" = node ]
+          docker exec mc ls -l /data
+          docker exec mc test -s /data/mandela.db
+
+      - name: Container restarts healthy with its data volume
+        run: |
+          docker restart mc
+          for i in $(seq 1 40); do
+            [ "$(docker inspect --format '{{.State.Health.Status}}' mc)" = healthy ] && break
+            sleep 3
+          done
+          [ "$(docker inspect --format '{{.State.Health.Status}}' mc)" = healthy ]
+          docker exec mc test -s /data/mandela.db
+
+      - name: Container logs
+        if: always()
+        run: docker logs mc || true

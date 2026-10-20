@@ -51,18 +51,40 @@ npm run db:reset                 # wipes content, settings and comments, reloads
 
 ## Deploying
 
-SQLite is a file, so the host needs a **persistent disk**. Good fits: any VPS, Fly.io, Railway, Render (with a disk), or Docker anywhere.
+SQLite is a file, so the host needs a **persistent disk** and exactly one running copy of the app. Good fits: Fly.io (config included), Railway, Render with a disk, any VPS, or Docker anywhere.
+
+### Fly.io
+
+`fly.toml` is ready: one always-on 512 MB machine, a 1 GB volume at `/data`, HTTPS forced, and a health check on `/login`. Needs a Fly account with a payment method; the machine costs a few dollars a month.
+
+```bash
+fly auth login
+fly launch --copy-config --no-deploy      # pick an app name that is free and a region near your visitors
+fly volumes create mandela_data --size 1 --region <the region you picked>
+fly secrets set AUTH_SECRET="$(openssl rand -base64 48)" ADMIN_USERNAME=admin ADMIN_PASSWORD="<a long password>"
+fly deploy
+fly status && fly open
+```
+
+Sign in at `/login` with the admin account, then change the site wording in Admin > Site settings. Later deploys are just `fly deploy`. Fly keeps daily volume snapshots for 5 days (`fly volumes snapshots list`). For your own copy, fetch `/data/mandela.db` and the `mandela.db-wal` file next to it with `fly ssh sftp get`, preferably when traffic is low; the image has no `sqlite3` command.
+
+Do not scale past one machine (`fly scale count 1`): the volume belongs to one machine, and the sign-in and posting rate limits are kept in its memory. Fly sets `Fly-Client-IP`, which the app uses to tell visitors apart.
+
+### Anywhere with Docker
 
 ```bash
 docker compose up -d --build     # needs AUTH_SECRET and ADMIN_PASSWORD in a .env file next to docker-compose.yml
 ```
 
-Put it behind HTTPS (Caddy, nginx, or your host's built-in TLS). Back up by copying the database file (`/data/mandela.db` in Docker; stop the app or use `sqlite3 mandela.db ".backup backup.db"` for a consistent copy).
+Put it behind HTTPS (Caddy, nginx, or your host's built-in TLS), and make sure the proxy appends the visitor's address to `X-Forwarded-For`: the app trusts the last entry there for rate limiting, so it must not be reachable except through your proxy. Back up by copying the database file (`/data/mandela.db`; stop the app or use `sqlite3 mandela.db ".backup backup.db"` for a consistent copy).
 
-Vercel and Netlify functions have no persistent disk, so this version will not keep data there. To use them, swap the data layer in `src/lib/db.ts` and `src/lib/content.ts` for a hosted database such as Postgres or Turso. All SQL lives in those files, the `src/app/actions/` folder and the admin and tape pages.
+### Not Vercel or Netlify (yet)
 
-CI (`.github/workflows/ci.yml`) builds the image on every push, starts it, waits for the `HEALTHCHECK`, probes a few pages, checks it runs as the `node` user, and restarts it on its volume. The image installs with `npm ci --ignore-scripts`: without that flag npm runs `node-gyp` for `better-sqlite3`, which needs Python and a compiler that `node:22-slim` does not have. The package ships prebuilt Linux binaries (glibc and musl, x64 and arm64) and loads them at runtime, so nothing needs compiling. If you change the base image or the `better-sqlite3` version, watch that job.
-A bind-mounted data folder is owned by root and the app runs as `node`; use the named volume from `docker-compose.yml`, or `chown 1000:1000` the folder.
+Their functions have no persistent disk, so this version would lose accounts, comments and admin edits there. To use them, swap the data layer in `src/lib/db.ts` and `src/lib/content.ts` for a hosted database such as Turso or Postgres. All SQL lives in those files, the `src/app/actions/` folder and the admin and tape pages.
+
+### What CI checks
+
+`.github/workflows/ci.yml` builds the image on every push, starts it, waits for the `HEALTHCHECK`, probes a few pages, and checks the server runs as the unprivileged `node` user (the entrypoint starts as root only to fix ownership of the mounted `/data`, which hosts like Fly mount as root; CI mounts a root-owned folder to prove it). It also restarts the container on its volume. The image installs with `npm ci --ignore-scripts`: without that flag npm runs `node-gyp` for `better-sqlite3`, which needs Python and a compiler that `node:22-slim` does not have. The package ships prebuilt Linux binaries (glibc and musl, x64 and arm64) and loads them at runtime. If you change the base image or the `better-sqlite3` version, watch that job.
 
 ## Project layout
 

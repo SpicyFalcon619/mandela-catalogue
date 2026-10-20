@@ -1,0 +1,2 @@
+# The entrypoint runs in Linux containers; CRLF would break its shebang when built from Windows.
+*.sh text eol=lf

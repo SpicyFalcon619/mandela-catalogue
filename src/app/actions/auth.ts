@@ -4,14 +4,14 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { endSession, getUser, hashPassword, safeNext, startSession, verifyPassword } from "@/lib/auth";
+import { clientKey } from "@/lib/client-ip";
 import { getSettings } from "@/lib/content";
 import { tooMany } from "@/lib/rate";
 
 export type FormState = { error?: string; ok?: string };
 
 async function ip() {
-  const h = await headers();
-  return h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "local";
+  return clientKey(await headers());
 }
 
 export async function registerAction(_prev: FormState, fd: FormData): Promise<FormState> {

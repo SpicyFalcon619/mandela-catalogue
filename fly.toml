@@ -1,0 +1,36 @@
+# Fly.io config. See "Deploying" in the README for the exact commands.
+# `fly launch --copy-config --no-deploy` asks for a free app name and a region and fills them in.
+app = "mandela-catalogue"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "3000"
+  HOSTNAME = "0.0.0.0"
+  DATABASE_PATH = "/data/mandela.db"
+
+# SQLite lives on this volume. A volume belongs to one machine, so keep exactly one machine.
+[[mounts]]
+  source = "mandela_data"
+  destination = "/data"
+  initial_size = "1gb"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  # One always-on machine: the sign-in and posting rate limits live in its memory.
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/login"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "20s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

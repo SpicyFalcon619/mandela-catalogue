@@ -76,8 +76,10 @@ jobs:
           done
           [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/no-such-page)" = 404 ]
           [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/admin)" = 307 ]
-          echo "runs as: $(docker exec mc id -un)"
-          [ "$(docker exec mc id -un)" = node ]
+          # The entrypoint starts as root to fix volume ownership, then the server must run as node (uid 1000).
+          uid=$(docker exec mc awk '/^Uid:/{print $2}' /proc/1/status)
+          echo "server runs as uid $uid"
+          [ "$uid" = 1000 ]
           docker exec mc ls -l /data
           docker exec mc test -s /data/mandela.db
 
@@ -91,6 +93,21 @@ jobs:
           [ "$(docker inspect --format '{{.State.Health.Status}}' mc)" = healthy ]
           docker exec mc test -s /data/mandela.db
 
+      - name: Works with a root-owned mounted volume (as on Fly.io)
+        run: |
+          sudo install -d -o root -g root -m 755 /tmp/rootdata
+          docker run -d --name mc2 -p 3001:3000 -v /tmp/rootdata:/data             -e AUTH_SECRET="$(openssl rand -base64 48)" -e COOKIE_SECURE=false             mandela-catalogue
+          for i in $(seq 1 40); do
+            [ "$(docker inspect --format '{{.State.Health.Status}}' mc2)" = healthy ] && break
+            sleep 3
+          done
+          [ "$(docker inspect --format '{{.State.Health.Status}}' mc2)" = healthy ] || { docker logs mc2; exit 1; }
+          [ "$(docker exec mc2 awk '/^Uid:/{print $2}' /proc/1/status)" = 1000 ]
+          ls -ln /tmp/rootdata
+          test -s /tmp/rootdata/mandela.db
+
       - name: Container logs
         if: always()
-        run: docker logs mc || true
+        run: |
+          docker logs mc || true
+          docker logs mc2 || true

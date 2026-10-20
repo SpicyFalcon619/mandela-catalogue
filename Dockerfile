@@ -8,7 +8,10 @@
 FROM node:22-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+# --ignore-scripts: npm would otherwise run node-gyp for better-sqlite3, which needs Python and a
+# compiler that node:22-slim does not have. The package ships prebuilt Linux binaries and loads
+# them at runtime, so nothing needs compiling.
+RUN npm ci --ignore-scripts
 
 FROM node:22-slim AS build
 WORKDIR /app

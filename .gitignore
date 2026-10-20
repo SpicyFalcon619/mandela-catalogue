@@ -9,3 +9,7 @@ data/*.db-*
 .DS_Store
 tsconfig.tsbuildinfo
 next-env.d.ts
+
+# Playwright
+test-results/
+playwright-report/

@@ -6,6 +6,7 @@ Next.js 16 (App Router, TypeScript) fan site for *The Mandela Catalogue*. SQLite
 - `npm run dev` / `npm run build` / `npm start`
 - `npm run typecheck` (run after every change)
 - `npm test` (Vitest, runs in about 2s; run after touching actions, auth or db)
+- `npm run e2e` (builds, then Playwright in headless Chromium, about 1 minute; run before shipping UI or flow changes. First time: `npx playwright install chromium`)
 - `npm run db:reset` wipes content and reloads the seed (keeps users)
 
 ## Where things are
@@ -31,5 +32,8 @@ Next.js 16 (App Router, TypeScript) fan site for *The Mandela Catalogue*. SQLite
 ## Automated tests (`tests/`)
 Server actions are called directly against a throwaway SQLite file. `tests/setup.ts` fakes `next/headers`, `next/navigation` and `next/cache`; `redirect()` throws, and `redirectOf()` in `tests/helpers.ts` reads the target. `admin-authz.test.ts` checks that every export of `actions/admin.ts` rejects anonymous and non-admin callers; it also fails when a new admin action is added without being listed, so add new ones to its `cases()`. The rate limiter is process-wide, so tests that hit it use a distinct `x-forwarded-for` or user.
 
-## Tested flows by hand (headless Chromium, production build)
+## Browser tests (`e2e/`)
+`e2e/serve.mjs` starts `.next/standalone/server.js` (what the Dockerfile runs) on port 3100 with a fresh `data/e2e.db` and the admin `e2eadmin`. Tests share that server and database, so keep usernames unique (`name()` helper) and mind the rate limits: 5 sign-ups per hour per IP (the suite uses 4), 6 logins per 15 minutes per account (the admin signs in once and the session is reused). Use `input[name=...]` selectors for form fields: label text includes the hint text, and `getByRole("alert")` also matches Next's route announcer.
+
+## Flows covered by hand before the e2e suite existed (headless Chromium, production build)
 Register, login (wrong password), comment, theory moderation, hero text edit, section hide, tape create/validate/delete, display prefs (cookie + account), all admin pages, 404, no horizontal scroll at 390px.

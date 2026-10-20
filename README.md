@@ -36,6 +36,7 @@ Other commands:
 npm run build && npm start       # production mode
 npm run typecheck
 npm test                         # access rules, sign-in, comments and moderation
+npm run e2e                      # builds, then browser tests (first: npx playwright install chromium)
 npm run db:reset                 # wipes content, settings and comments, reloads the original data (accounts are kept)
 ```
 

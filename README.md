@@ -46,31 +46,42 @@ npm run db:reset                 # wipes content, settings and comments, reloads
 | --- | --- |
 | `AUTH_SECRET` | Signs login cookies. Required in production. `openssl rand -base64 48` |
 | `DATABASE_PATH` | SQLite file. Default `./data/mandela.db`. Use a persistent disk in production. |
+| `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` | Use a hosted Turso database instead of the local file. Required on Vercel, which has no disk. Leave unset for local development. |
 | `ADMIN_USERNAME`, `ADMIN_PASSWORD` | Creates this admin on start if it does not exist. |
 | `COOKIE_SECURE` | Set to `false` only when serving over plain http. |
 
 ## Deploying
 
-SQLite is a file, so the host needs a **persistent disk** and exactly one running copy of the app. Good fits: Fly.io (config included), Railway, Render with a disk, any VPS, or Docker anywhere.
+The live site is at **https://mandela-catalogue.vercel.app**: Vercel (free Hobby plan, which is for non-commercial use) runs the app and Turso (free plan: 5 GB, 500 million row reads and 10 million row writes a month) holds the data. Neither needs a card.
 
-### Fly.io
+Why two services: Vercel has no persistent disk, so the SQLite file that the app uses locally cannot live there. With `TURSO_DATABASE_URL` set, the app talks to Turso over HTTPS instead (`src/lib/db.ts` has both drivers behind one async interface).
 
-`fly.toml` is ready: one always-on 512 MB machine, a 1 GB volume at `/data`, HTTPS forced, and a health check on `/login`. Needs a Fly account with a payment method; the machine costs a few dollars a month.
+### Set it up from scratch
 
-```bash
-fly auth login
-fly launch --copy-config --no-deploy      # pick an app name that is free and a region near your visitors
-fly volumes create mandela_data --size 1 --region <the region you picked>
-fly secrets set AUTH_SECRET="$(openssl rand -base64 48)" ADMIN_USERNAME=admin ADMIN_PASSWORD="<a long password>"
-fly deploy
-fly status && fly open
-```
+1. **Turso:** sign in at turso.tech, create a database (choose AWS US East, the same region Vercel runs functions in), copy its `libsql://` URL and create a token.
+2. **Vercel:** `npx vercel login`, then in the repo `npx vercel link --yes --project <name>`.
+3. **Variables** (production), each with `npx vercel env add NAME production` (add `--sensitive` for secrets):
 
-Sign in at `/login` with the admin account, then change the site wording in Admin > Site settings. Later deploys are just `fly deploy`. Fly keeps daily volume snapshots for 5 days (`fly volumes snapshots list`). For your own copy, fetch `/data/mandela.db` and the `mandela.db-wal` file next to it with `fly ssh sftp get`, preferably when traffic is low; the image has no `sqlite3` command.
+| Name | Value |
+| --- | --- |
+| `AUTH_SECRET` | a long random string (`openssl rand -base64 48`) |
+| `ADMIN_USERNAME`, `ADMIN_PASSWORD` | the first admin account, created on first start |
+| `TURSO_DATABASE_URL` | the `libsql://...` URL |
+| `TURSO_AUTH_TOKEN` | the token (sensitive) |
 
-Do not scale past one machine (`fly scale count 1`): the volume belongs to one machine, and the sign-in and posting rate limits are kept in its memory. Fly sets `Fly-Client-IP`, which the app uses to tell visitors apart.
+4. **Deploy:** `npx vercel deploy --prod`. The first start creates the tables, loads the original content and creates the admin. To do that ahead of time, or to reset content later, run `npm run db:reset` with the same `TURSO_*` variables in your shell.
 
-### Anywhere with Docker
+Later changes: push to GitHub, then `npx vercel deploy --prod` (or connect the repo in the Vercel dashboard for automatic deploys).
+
+Things that differ from running on one server:
+- Sign-in and posting rate limits are stored in the database (`rate_limits` table), because Vercel runs many short-lived instances; an in-memory counter would reset on each one.
+- The visitor address for rate limiting comes from `X-Vercel-Forwarded-For`, which Vercel sets itself.
+- Backups: Turso keeps point-in-time restore for 1 day on the free plan. For your own copy, use the Turso CLI (`turso db shell <name> .dump`).
+- Rotate the Turso token if it is ever shown anywhere: create a new one, replace `TURSO_AUTH_TOKEN` in Vercel, redeploy, then revoke the old one.
+
+### Anywhere with Docker, or a server with a disk
+
+The same app runs from a SQLite file with no Turso variables. The image is built and health-checked in CI on every push.
 
 ```bash
 docker compose up -d --build     # needs AUTH_SECRET and ADMIN_PASSWORD in a .env file next to docker-compose.yml
@@ -78,13 +89,11 @@ docker compose up -d --build     # needs AUTH_SECRET and ADMIN_PASSWORD in a .en
 
 Put it behind HTTPS (Caddy, nginx, or your host's built-in TLS), and make sure the proxy appends the visitor's address to `X-Forwarded-For`: the app trusts the last entry there for rate limiting, so it must not be reachable except through your proxy. Back up by copying the database file (`/data/mandela.db`; stop the app or use `sqlite3 mandela.db ".backup backup.db"` for a consistent copy).
 
-### Not Vercel or Netlify (yet)
-
-Their functions have no persistent disk, so this version would lose accounts, comments and admin edits there. To use them, swap the data layer in `src/lib/db.ts` and `src/lib/content.ts` for a hosted database such as Turso or Postgres. All SQL lives in those files, the `src/app/actions/` folder and the admin and tape pages.
+`fly.toml` is kept for Fly.io, but Fly no longer has a free tier (new accounts get a 5-minute trial), so it needs a paid account. Keep exactly one machine there: the volume belongs to one machine.
 
 ### What CI checks
 
-`.github/workflows/ci.yml` builds the image on every push, starts it, waits for the `HEALTHCHECK`, probes a few pages, and checks the server runs as the unprivileged `node` user (the entrypoint starts as root only to fix ownership of the mounted `/data`, which hosts like Fly mount as root; CI mounts a root-owned folder to prove it). It also restarts the container on its volume. The image installs with `npm ci --ignore-scripts`: without that flag npm runs `node-gyp` for `better-sqlite3`, which needs Python and a compiler that `node:22-slim` does not have. The package ships prebuilt Linux binaries (glibc and musl, x64 and arm64) and loads them at runtime. If you change the base image or the `better-sqlite3` version, watch that job.
+`.github/workflows/ci.yml` runs typecheck, the unit tests on both database drivers (the local file and the libSQL client that Turso uses), and the browser tests. It also builds the Docker image, starts it, waits for the `HEALTHCHECK`, probes a few pages, checks the server runs as the unprivileged `node` user (the entrypoint starts as root only to fix ownership of a mounted `/data`, then drops privileges), proves that works with a root-owned volume, and restarts it. The image installs with `npm ci --ignore-scripts`: without that flag npm runs `node-gyp` for `better-sqlite3`, which needs Python and a compiler that `node:22-slim` does not have. The package ships prebuilt Linux binaries and loads them at runtime.
 
 ## Project layout
 

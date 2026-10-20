@@ -60,7 +60,8 @@ Put it behind HTTPS (Caddy, nginx, or your host's built-in TLS). Back up by copy
 
 Vercel and Netlify functions have no persistent disk, so this version will not keep data there. To use them, swap the data layer in `src/lib/db.ts` and `src/lib/content.ts` for a hosted database such as Postgres or Turso. All SQL lives in those files, the `src/app/actions/` folder and the admin and tape pages.
 
-The Dockerfile was written but not built in the environment where this was developed; run the build once and check it before relying on it.
+The Dockerfile has not been built yet, because Docker was not available where this was developed. What was checked: the `output: "standalone"` build it runs (`node server.js`) starts with `NODE_ENV=production`, creates and seeds the database at `DATABASE_PATH`, bootstraps the admin from the environment and serves pages and static files. Run `docker compose up --build` once and confirm the container reports healthy before relying on it. If `npm ci` fails inside the image on `better-sqlite3`, no prebuilt binary matched the platform; install `python3 make g++` in the `deps` stage.
+A bind-mounted data folder is owned by root and the app runs as `node`; use the named volume from `docker-compose.yml`, or `chown 1000:1000` the folder.
 
 ## Project layout
 

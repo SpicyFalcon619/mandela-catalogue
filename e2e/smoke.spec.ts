@@ -436,12 +436,14 @@ test.describe("original footage", () => {
     await expect(page.locator('input[name="youtube_channel"]')).toHaveValue("Alex Kister");
     await page.locator('input[name="youtube_channel"]').fill("Some Other Channel");
     await page.getByRole("button", { name: "Save" }).click();
+    await expect(page.getByText("Saved.")).toBeVisible(); // wait for the save before leaving the page
     await page.goto("/tapes/3");
     await expect(page.locator(".vid figcaption")).toContainText("Some Other Channel");
     // restore it
     await page.goto("/admin/tapes/3");
     await page.locator('input[name="youtube_channel"]').fill("Alex Kister");
     await page.getByRole("button", { name: "Save" }).click();
+    await expect(page.getByText("Saved.")).toBeVisible();
     await page.goto("/tapes/3");
     await expect(page.locator(".vid figcaption")).not.toContainText("Some Other Channel");
     await ctx.close();
@@ -570,5 +572,33 @@ test.describe("site shell: navigation bar, footer and helpers", () => {
     await expect(hero.getByRole("button", { name: /Effects/ })).toHaveCount(0);
     await page.getByRole("button", { name: "Display" }).click();
     await expect(page.getByRole("dialog", { name: "Display settings" })).toContainText("Effects");
+  });
+});
+
+test.describe("favicon", () => {
+  test("the page advertises an SVG, an ICO and an Apple touch icon, and each one is served", async ({ page, request }) => {
+    await page.goto("/");
+    const links = await page.locator("head link[rel~='icon'], head link[rel='apple-touch-icon']").evaluateAll((ls) =>
+      ls.map((l) => ({ rel: (l as HTMLLinkElement).rel, href: (l as HTMLLinkElement).href, type: l.getAttribute("type") })),
+    );
+    const byType = (frag: string) => links.find((l) => l.href.includes(frag));
+    const svg = byType("/icon.svg");
+    const ico = byType("/favicon.ico");
+    const apple = links.find((l) => l.rel === "apple-touch-icon");
+    expect(svg, "svg icon link").toBeTruthy();
+    expect(ico, "ico link").toBeTruthy();
+    expect(apple, "apple touch icon link").toBeTruthy();
+    for (const [name, l, type] of [["svg", svg!, "image/svg+xml"], ["ico", ico!, "image/"], ["apple", apple!, "image/png"]] as const) {
+      const res = await request.get(l.href);
+      expect(res.status(), `${name} status`).toBe(200);
+      expect(res.headers()["content-type"], `${name} type`).toContain(type);
+      expect((await res.body()).length, `${name} size`).toBeGreaterThan(100);
+    }
+    const svgText = await (await request.get(svg!.href)).text();
+    expect(svgText).toContain("<svg");
+    // The path browsers request by default also works.
+    expect((await request.get("/favicon.ico")).status()).toBe(200);
+    // No emoji or text glyph is used as the icon.
+    expect(svgText).not.toMatch(/<text/);
   });
 });

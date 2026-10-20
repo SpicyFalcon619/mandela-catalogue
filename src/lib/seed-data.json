@@ -1,0 +1,496 @@
+{
+ "TAPES": [
+  {
+   "id": 1,
+   "t": "overthrone",
+   "d": "2021-06-09",
+   "len": "4:01",
+   "main": false,
+   "iw": "Biblical era",
+   "iws": 0,
+   "c": "stated",
+   "th": [
+    "gabriel"
+   ],
+   "s": "A corrupted Beginner's Bible tape. Satan, posing as Gabriel, tells shepherds he is their \"true savior.\" An unknown voice pleads from a sand tomb.",
+   "n": "The video that started the series. It began as a high-school writing project."
+  },
+  {
+   "id": 2,
+   "t": "The Mandela Catalogue Vol. 1",
+   "d": "2021-08-09",
+   "len": "15:09",
+   "main": true,
+   "iw": "1992",
+   "iws": 1992,
+   "c": "inferred",
+   "th": [
+    "mark",
+    "alt"
+   ],
+   "s": "Four tapes: an Alternate-avoidance PSA, the evidence reel on Mark Heathcliff's death, a 911 training video and a child-reaction test.",
+   "n": "Restored and re-released April 4, 2023 at 17:29. The runtime shown is the original."
+  },
+  {
+   "id": 3,
+   "t": "intruder alert",
+   "d": "2021-08-18",
+   "len": "5:47",
+   "main": false,
+   "iw": "Early 1990s",
+   "iws": 1992.1,
+   "c": "inferred",
+   "th": [
+    "intruder"
+   ],
+   "s": "A PSA on unsupervised children and television. A mother finds her missing child, is taunted by a smiling face on the screen, and dies. Police dismiss the Alternate explanation.",
+   "n": "The face in this video returns in Vol. 2."
+  },
+  {
+   "id": 4,
+   "t": "exhibition",
+   "d": "2021-10-30",
+   "len": "8:32",
+   "main": false,
+   "iw": "1992",
+   "iws": 1992.2,
+   "c": "inferred",
+   "th": [
+    "mark",
+    "thatcher",
+    "gabriel"
+   ],
+   "s": "Mark Heathcliff was stalked by Alternates for weeks. Investigator Thatcher Davis calls it paranoia. A Beginner's Bible tape retells Noah's Ark, with Satan promising an Alternate a \"last message\" on the Ark.",
+   "n": "First Beginner's Bible retelling after overthrone."
+  },
+  {
+   "id": 5,
+   "t": "The Mandela Catalogue Vol. 2",
+   "d": "2022-01-18",
+   "len": "20:34",
+   "main": true,
+   "iw": "2009",
+   "iws": 2009.1,
+   "c": "inferred",
+   "th": [
+    "adam",
+    "intruder"
+   ],
+   "s": "Adam Murray and Jonah Marshall investigate a \"ghost cat.\" Adam falls asleep, is whispered to by an Alternate, and enters a locked room with an analog TV showing the face from intruder alert. Jonah drives off and is presumed killed.",
+   "n": "Introduces the Bythorne Paranormal Society pair."
+  },
+  {
+   "id": 6,
+   "t": "The Mandela Catalogue Vol. 333",
+   "d": "2022-06-03",
+   "len": "26:41",
+   "main": true,
+   "iw": "1992",
+   "iws": 1992.3,
+   "c": "inferred",
+   "th": [
+    "mark",
+    "thatcher",
+    "adam"
+   ],
+   "s": "Lynn calls Jude about their crying son. Reels cover Mark's death (blamed on an Alternate of Cesar Torres) and the Stanley puppet's \"imaginary friend\" broadcast. Ruth Weaver is killed and Thatcher is attacked.",
+   "n": "The Murray house incident. Adam is the crying child."
+  },
+  {
+   "id": 7,
+   "t": "every day gets brighter",
+   "d": "2022-06-06",
+   "len": "2:26",
+   "main": false,
+   "iw": "After Vol. 333",
+   "iws": 1992.4,
+   "c": "inferred",
+   "th": [
+    "thatcher"
+   ],
+   "s": "Thatcher records a tape for Ruth, voicing his fears and vowing to kill the Alternate impersonating him.",
+   "n": "Written by Thorne Baker, who also plays Thatcher."
+  },
+  {
+   "id": 8,
+   "t": "interlude",
+   "d": "2022-09-05",
+   "len": "3:22",
+   "main": false,
+   "iw": "2009",
+   "iws": 2009,
+   "c": "stated",
+   "th": [
+    "alt"
+   ],
+   "s": "County population falls from 15,000 (1992) to about 1,000 (2009). A USDTP propaganda tape describes three assimilation types: Flawed, Complete and Overdriven.",
+   "n": "The clearest look at what the Alternates have done to the county."
+  },
+  {
+   "id": 9,
+   "t": "The Mandela Catalogue Vol. 4",
+   "d": "2022-11-25",
+   "len": "40:53",
+   "main": true,
+   "iw": "2009",
+   "iws": 2009.3,
+   "c": "stated",
+   "th": [
+    "gabriel",
+    "adam",
+    "intruder"
+   ],
+   "s": "A retelling of Genesis. In 2009, Evelin finds the Stress Assessment tape. Adam agrees to make a memorial video for Jonah. Gabriel, revealed as O'Brien, kills Dave Lee. Evelin meets an Alternate at the empty police station. The Intruder tells Adam he is an Alternate.",
+   "n": "The longest tape. Its live-action green-screen segments drew criticism; Kister says the artificial look is deliberate."
+  },
+  {
+   "id": 10,
+   "t": "The Beginner's Bible \"The Story of Easter\" Clips circa 1995",
+   "d": "2023-04-08",
+   "len": "2:00",
+   "main": false,
+   "iw": "Circa 1995",
+   "iws": 1995,
+   "c": "stated",
+   "th": [
+    "gabriel"
+   ],
+   "s": "From the affiliated GENESIS APOCRYPHON channel. Guards and nuns find \"Gabriel\" in a cave, implying Jesus is in the tomb.",
+   "n": "The series keeps rewriting Bible stories with Gabriel in the wrong place."
+  },
+  {
+   "id": 11,
+   "t": "mandela catalyst",
+   "d": "2023-04-16",
+   "len": "7:49",
+   "main": false,
+   "iw": "2009",
+   "iws": 2009.4,
+   "c": "inferred",
+   "th": [
+    "thatcher",
+    "adam",
+    "gabriel"
+   ],
+   "s": "Dave's autopsy shows missing eyes. Gabriel tells Thatcher to \"go and see.\" Thatcher finds Adam in agony, begging to be killed.",
+   "n": "Follows Vol. 4."
+  },
+  {
+   "id": 12,
+   "t": "Presto",
+   "d": "2023-08-12",
+   "len": "6:19",
+   "main": false,
+   "iw": "2009",
+   "iws": 2009.5,
+   "c": "inferred",
+   "th": [
+    "adam",
+    "thatcher"
+   ],
+   "s": "A MandelaTech going-out-of-business ad. Evelin and Sarah hack security cameras and find footage of Thatcher and Adam. Adam says God told him he is \"paying the price\" for Jonah's death.",
+   "n": "Adam's guilt over Jonah becomes explicit."
+  },
+  {
+   "id": 13,
+   "t": "1_19_09 221a",
+   "d": "2023-08-22",
+   "len": "0:29",
+   "main": false,
+   "iw": "Jan. 19, 2009 (from title)",
+   "iws": 2009.05,
+   "c": "inferred",
+   "th": [
+    "adam",
+    "gabriel",
+    "intruder"
+   ],
+   "s": "From GENESIS APOCRYPHON. Adam's drawings of Gabriel and the Intruder. Ends with \"answers lie beneath.\"",
+   "n": "Shortest tape: 29 seconds."
+  },
+  {
+   "id": 14,
+   "t": "2:38",
+   "d": "2024-02-08",
+   "len": "5:57",
+   "main": false,
+   "iw": "2015",
+   "iws": 2015,
+   "c": "stated",
+   "th": [
+    "digital"
+   ],
+   "s": "A 2015 Vine compilation that cuts to a dark room where a doorknob begins to turn.",
+   "n": "First clear step into the digital era."
+  },
+  {
+   "id": 15,
+   "t": "The Mandela Catalogue Vol. 5",
+   "d": "2024-06-24",
+   "len": "33:07",
+   "main": true,
+   "iw": "1992",
+   "iws": 1992.35,
+   "c": "stated",
+   "th": [
+    "adam",
+    "gabriel"
+   ],
+   "s": "In 1992, Jude Murray tries to escape through \"Midwestern Relocation Services\" and is attacked by the Alternate N. A stop-motion shepherd story is likely linked to overthrone. Jude ends paralyzed.",
+   "n": "Goes back to Adam's father."
+  },
+  {
+   "id": 16,
+   "t": "Unraveling, Pt. 1",
+   "d": "2024-08-14",
+   "len": "4:17",
+   "main": false,
+   "iw": "Undated",
+   "iws": null,
+   "c": "unknown",
+   "th": [
+    "digital"
+   ],
+   "s": "A looping \"get ready with me\" TikTok that corrupts with each repeat.",
+   "n": "Digital-era format."
+  },
+  {
+   "id": 17,
+   "t": "Unraveling, Pt. 2",
+   "d": "2024-10-30",
+   "len": "10:48",
+   "main": false,
+   "iw": "Undated",
+   "iws": null,
+   "c": "unknown",
+   "th": [
+    "digital"
+   ],
+   "s": "Dave Lee tests VHS generational loss. The copies deteriorate before a likely Alternate attack.",
+   "n": "Dave Lee appears here after his death in Vol. 4, so this may be earlier footage."
+  },
+  {
+   "id": 18,
+   "t": "Cognitohazard",
+   "d": "2025-04-04",
+   "len": "7:44",
+   "main": false,
+   "iw": "Undated",
+   "iws": null,
+   "c": "unknown",
+   "th": [
+    "digital"
+   ],
+   "s": "Two forum users discuss family outings in Southern Wisconsin. One turns hostile and tries to cause M.A.D. in the other.",
+   "n": "Sets up Vol. 6."
+  },
+  {
+   "id": 19,
+   "t": "The Mandela Catalogue Vol. 6",
+   "d": "2026-03-13",
+   "len": "26:33",
+   "main": true,
+   "iw": "Undated in my sources",
+   "iws": null,
+   "c": "unknown",
+   "th": [
+    "adam",
+    "digital"
+   ],
+   "s": "Julie, Amanda and Noah discuss Addison's suicide video from Cognitohazard. Adam, in Alternate form, leads Noah and Amanda to a mirror-filled house in the woods. The camcorder dies as Noah flees.",
+   "n": "The most recent main volume as of October 2026."
+  }
+ ],
+ "CASES": [
+  {
+   "n": "Thatcher Davis",
+   "a": "Thorne Baker",
+   "p": "Former Mandela County PD lieutenant. He first treats Mark's case as paranoia, then spends years seeking revenge on the Alternates.",
+   "ap": [
+    4,
+    6,
+    7,
+    9,
+    11,
+    12
+   ],
+   "st": "Alive in 2009"
+  },
+  {
+   "n": "Adam Murray",
+   "a": "Ty Osborne",
+   "p": "Bythorne Paranormal Society member, abducted as a child, searching for his mother. The Intruder tells him he is an Alternate.",
+   "ap": [
+    5,
+    6,
+    9,
+    11,
+    12,
+    13,
+    19
+   ],
+   "st": "Status: <span class=\"redact\" tabindex=\"0\">appears as an Alternate in Vol. 6</span>"
+  },
+  {
+   "n": "Sarah Heathcliff",
+   "a": "Rachel Ridley",
+   "p": "Founded the Bythorne Paranormal Society to find out what happened to her brother Mark.",
+   "ap": [
+    12
+   ],
+   "st": "Alive in 2009"
+  },
+  {
+   "n": "Evelin Miller",
+   "a": "Spidey",
+   "p": "Adam's ex-girlfriend. She investigates his changed behavior and finds the Stress Assessment tape.",
+   "ap": [
+    9,
+    12
+   ],
+   "st": "Alive in 2009"
+  },
+  {
+   "n": "Mark Heathcliff",
+   "a": "Alex Kister",
+   "p": "Teenager stalked by Alternates, then lured into a trap by a copy of his friend Cesar Torres. His death starts the main storyline.",
+   "ap": [
+    2,
+    4,
+    6
+   ],
+   "st": "Dies in 1992"
+  },
+  {
+   "n": "Jude & Lynn Murray",
+   "a": "no credit in my source",
+   "p": "Adam's parents. The Alternates destroy them both. Jude ends paralyzed after an attack by N.",
+   "ap": [
+    6,
+    15
+   ],
+   "st": "Both harmed"
+  },
+  {
+   "n": "Ruth Weaver",
+   "a": "Bee \"Fruitmasseuse\" L",
+   "p": "Thatcher's fellow officer. Killed by the Murray House Alternate.",
+   "ap": [
+    6,
+    7
+   ],
+   "st": "Dies in 1992"
+  },
+  {
+   "n": "Jonah Marshall",
+   "a": "Gabriel Linan",
+   "p": "Bythorne Paranormal Society member. He drives off after Adam enters the locked room and is presumed killed.",
+   "ap": [
+    5,
+    9
+   ],
+   "st": "Presumed dead"
+  },
+  {
+   "n": "Dave Lee",
+   "a": "Alex Kister",
+   "p": "MandelaTECH manager. Gabriel kills him in Vol. 4; his autopsy later shows missing eyes.",
+   "ap": [
+    9,
+    11,
+    17
+   ],
+   "st": "Dies in 2009"
+  }
+ ],
+ "QS": [
+  {
+   "q": "Who created The Mandela Catalogue?",
+   "o": [
+    "Alex Kister",
+    "Thorne Baker",
+    "Ty Osborne",
+    "Steven Spielberg"
+   ],
+   "a": 0,
+   "n": "Alex Kister started it on YouTube in 2021, at 17."
+  },
+  {
+   "q": "When was the first video, overthrone, released?",
+   "o": [
+    "June 9, 2021",
+    "August 9, 2021",
+    "October 30, 2021",
+    "January 18, 2022"
+   ],
+   "a": 0,
+   "n": "June 9, 2021. Vol. 1 followed two months later."
+  },
+  {
+   "q": "What happens to Mandela County's population between 1992 and 2009?",
+   "o": [
+    "It stays near 15,000",
+    "It falls from 15,000 to about 1,000",
+    "It doubles",
+    "It falls from 1,000 to zero"
+   ],
+   "a": 1,
+   "n": "That's the figure given on the interlude tape."
+  },
+  {
+   "q": "Which is NOT one of the three assimilation types named on the USDTP tape?",
+   "o": [
+    "Flawed",
+    "Complete",
+    "Overdriven",
+    "Hollow"
+   ],
+   "a": 3,
+   "n": "The three are Flawed, Complete and Overdriven."
+  },
+  {
+   "q": "Which volume is a retelling of Genesis?",
+   "o": [
+    "Vol. 1",
+    "Vol. 2",
+    "Vol. 4",
+    "Vol. 6"
+   ],
+   "a": 2,
+   "n": "Vol. 4 is also the longest tape at 40:53."
+  },
+  {
+   "q": "In Vol. 4, who is Gabriel revealed to be?",
+   "o": [
+    "A man named O'Brien",
+    "Thatcher Davis",
+    "Jonah Marshall",
+    "Dave Lee"
+   ],
+   "a": 0,
+   "n": "Gabriel, as O'Brien, then kills Dave Lee."
+  },
+  {
+   "q": "What is the Intruder, according to Wikipedia's summary?",
+   "o": [
+    "An Alternate",
+    "Not an Alternate; described as an ally",
+    "Adam Murray's father",
+    "A MandelaTECH product"
+   ],
+   "a": 1,
+   "n": "It is tied to TV and the abduction of over 3,000 children."
+  },
+  {
+   "q": "What release date has been reported for the film?",
+   "o": [
+    "June 9, 2026",
+    "October 31, 2027",
+    "June 9, 2028",
+    "Not announced"
+   ],
+   "a": 2,
+   "n": "Reported as set in September 2026."
+  }
+ ]
+}

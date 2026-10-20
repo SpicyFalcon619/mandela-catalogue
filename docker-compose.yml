@@ -1,0 +1,16 @@
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET in a .env file next to this one}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in a .env file next to this one}
+      # Set to "false" only if you serve over plain http.
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+    volumes:
+      - mandela-data:/data
+    restart: unless-stopped
+volumes:
+  mandela-data:

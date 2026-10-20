@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { saveEntity } from "@/app/actions/admin";
 import { getTapes } from "@/lib/content";
-import { db } from "@/lib/db";
+import { sql } from "@/lib/db";
 import { youtubeHref } from "@/lib/youtube";
-import { form, makeUser, redirectOf, resetRequest, signInAs } from "./helpers";
+import { count, form, makeUser, redirectOf, resetRequest, signInAs } from "./helpers";
 
 describe("youtubeHref", () => {
   it.each([
@@ -38,16 +38,16 @@ describe("youtubeHref", () => {
 });
 
 describe("seeded links", () => {
-  it("gives every one of the 19 tapes its own valid YouTube watch link", () => {
-    const tapes = getTapes();
+  it("gives every one of the 19 tapes its own valid YouTube watch link", async () => {
+    const tapes = await getTapes();
     expect(tapes).toHaveLength(19);
     const urls = tapes.map((t) => t.youtubeUrl);
     for (const [i, u] of urls.entries()) expect(u, tapes[i].title).toMatch(/^https:\/\/www\.youtube\.com\/watch\?v=[A-Za-z0-9_-]{11}$/);
     expect(new Set(urls).size).toBe(19);
   });
 
-  it("lists the official playlist among the sources", () => {
-    const row = db().prepare("SELECT url FROM sources WHERE url LIKE 'https://www.youtube.com/playlist?list=%'").get() as { url: string } | undefined;
+  it("lists the official playlist among the sources", async () => {
+    const row = await sql.get<{ url: string }>("SELECT url FROM sources WHERE url LIKE 'https://www.youtube.com/playlist?list=%'");
     expect(row?.url).toBe("https://www.youtube.com/playlist?list=PLkk6ZuwrqcsG1CFuI_kjfOVPunfuJEHwj");
   });
 });
@@ -58,24 +58,24 @@ describe("admin tape form", () => {
     form({ id: "new", title: "YT test tape", release_date: "2030-01-01", runtime: "1:00", confidence: "unknown", ...extra });
 
   it("rejects links that are not YouTube", async () => {
-    await signInAs(makeUser("admin").id);
-    const before = (db().prepare("SELECT COUNT(*) n FROM tapes").get() as { n: number }).n;
+    await signInAs((await makeUser("admin")).id);
+    const before = await count("SELECT COUNT(*) AS n FROM tapes");
     for (const bad of ["javascript:alert(1)", "https://evil.example/x", "http://www.youtube.com/watch?v=abc"]) {
       expect(await redirectOf(() => saveEntity("tapes", tape({ youtube_url: bad }))), bad).toMatch(/^\/admin\/tapes\/new\?error=/);
     }
-    expect((db().prepare("SELECT COUNT(*) n FROM tapes").get() as { n: number }).n).toBe(before);
+    expect(await count("SELECT COUNT(*) AS n FROM tapes")).toBe(before);
   });
 
   it("accepts a YouTube link, or none", async () => {
-    await signInAs(makeUser("admin").id);
+    await signInAs((await makeUser("admin")).id);
     expect(await redirectOf(() => saveEntity("tapes", tape({ youtube_url: "https://youtu.be/abcdefghijk" })))).toBe("/admin/tapes?saved=1");
     expect(await redirectOf(() => saveEntity("tapes", tape({ youtube_url: "" })))).toBe("/admin/tapes?saved=1");
-    const row = db().prepare("SELECT youtube_url FROM tapes WHERE title = 'YT test tape' ORDER BY id").all() as { youtube_url: string }[];
+    const row = await sql.all<{ youtube_url: string }>("SELECT youtube_url FROM tapes WHERE title = 'YT test tape' ORDER BY id");
     expect(row.map((r) => r.youtube_url)).toEqual(["https://youtu.be/abcdefghijk", ""]);
   });
 
-  it("never turns a bad value already in the database into a link", () => {
-    db().prepare("INSERT INTO tapes (title, release_date, runtime, youtube_url) VALUES ('Bad link', '2031-01-01', '1:00', 'javascript:alert(1)')").run();
-    expect(getTapes().find((t) => t.title === "Bad link")?.youtubeUrl).toBe("");
+  it("never turns a bad value already in the database into a link", async () => {
+    await sql.run("INSERT INTO tapes (title, release_date, runtime, youtube_url) VALUES ('Bad link', '2031-01-01', '1:00', 'javascript:alert(1)')");
+    expect((await getTapes()).find((t) => t.title === "Bad link")?.youtubeUrl).toBe("");
   });
 });

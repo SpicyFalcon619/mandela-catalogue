@@ -26,6 +26,7 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      - run: npm run test:libsql # the same suite through the libSQL client that Turso uses
       - run: npx playwright install --with-deps chromium
       - run: npm run e2e # builds, then runs Playwright against the standalone server
       - uses: actions/upload-artifact@v4

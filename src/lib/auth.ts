@@ -4,7 +4,7 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
-import { db } from "./db";
+import { sql } from "./db";
 
 const COOKIE = "mc_session";
 const MAX_AGE = 60 * 60 * 24 * 30;
@@ -49,9 +49,7 @@ export const getUser = cache(async (): Promise<SessionUser | null> => {
     const { payload } = await jwtVerify(token, secret());
     const id = Number(payload.sub);
     if (!Number.isInteger(id)) return null;
-    const row = db().prepare("SELECT id, username, role, banned FROM users WHERE id = ?").get(id) as
-      | { id: number; username: string; role: string; banned: number }
-      | undefined;
+    const row = await sql.get<{ id: number; username: string; role: string; banned: number }>("SELECT id, username, role, banned FROM users WHERE id = ?", id);
     if (!row || row.banned) return null;
     return { id: row.id, username: row.username, role: row.role === "admin" ? "admin" : "user" };
   } catch {

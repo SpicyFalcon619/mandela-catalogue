@@ -8,35 +8,38 @@ import { Stills } from "@/components/Stills";
 import { WatchLink } from "@/components/WatchLink";
 import { getUser } from "@/lib/auth";
 import { getCharacters, getSettings, getTape, getTapes } from "@/lib/content";
-import { db } from "@/lib/db";
+import { sql } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 type Row = { id: number; kind: string; body: string; status: string; created_at: string; user_id: number; username: string };
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
-  const t = getTape(Number((await params).id));
+  const t = await getTape(Number((await params).id));
   return { title: t ? `${t.title} · tape ${t.number}` : "Tape not found" };
 }
 
 export default async function TapePage({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
-  const tape = Number.isInteger(id) ? getTape(id) : null;
+  const tape = Number.isInteger(id) ? await getTape(id) : null;
   if (!tape) notFound();
-  const tapes = getTapes();
+  const tapes = await getTapes();
   const i = tapes.findIndex((t) => t.id === tape.id);
   const prev = tapes[i - 1], next = tapes[i + 1];
   const user = await getUser();
-  const s = getSettings();
-  const people = getCharacters().filter((c) => c.tapeIds.includes(tape.id));
-  const rows = db()
-    .prepare(
+  const [s, characters, rows] = await Promise.all([
+    getSettings(),
+    getCharacters(),
+    sql.all<Row>(
       `SELECT c.id, c.kind, c.body, c.status, c.created_at, c.user_id, u.username
        FROM comments c JOIN users u ON u.id = c.user_id
        WHERE c.tape_id = ? AND (c.status = 'visible' OR (c.status = 'pending' AND c.user_id = ?))
        ORDER BY c.created_at DESC, c.id DESC`,
-    )
-    .all(tape.id, user?.id ?? -1) as Row[];
+      tape.id,
+      user?.id ?? -1,
+    ),
+  ]);
+  const people = characters.filter((c) => c.tapeIds.includes(tape.id));
   const theories = rows.filter((r) => r.kind !== "comment");
   const comments = rows.filter((r) => r.kind === "comment");
   const pad = (n: number) => String(n).padStart(2, "0");

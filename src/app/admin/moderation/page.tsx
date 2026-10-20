@@ -1,7 +1,7 @@
 import { requireAdmin } from "@/lib/auth";
 import Link from "next/link";
 import { moderateComment } from "@/app/actions/admin";
-import { db } from "@/lib/db";
+import { sql } from "@/lib/db";
 
 type Row = { id: number; tape_id: number; kind: string; body: string; status: string; created_at: string; username: string; title: string };
 
@@ -35,13 +35,10 @@ function Item({ r }: { r: Row }) {
 export default async function Moderation() {
   await requireAdmin(); // pages check too: layouts are not re-run on client-side navigation
   const q = (where: string, limit: number) =>
-    db()
-      .prepare(
-        `SELECT c.id, c.tape_id, c.kind, c.body, c.status, c.created_at, u.username, t.title FROM comments c JOIN users u ON u.id = c.user_id JOIN tapes t ON t.id = c.tape_id WHERE ${where} ORDER BY c.created_at DESC, c.id DESC LIMIT ${limit}`,
-      )
-      .all() as Row[];
-  const pending = q("c.status = 'pending'", 100);
-  const recent = q("c.status != 'pending'", 40);
+    sql.all<Row>(
+      `SELECT c.id, c.tape_id, c.kind, c.body, c.status, c.created_at, u.username, t.title FROM comments c JOIN users u ON u.id = c.user_id JOIN tapes t ON t.id = c.tape_id WHERE ${where} ORDER BY c.created_at DESC, c.id DESC LIMIT ${limit}`,
+    );
+  const [pending, recent] = await Promise.all([q("c.status = 'pending'", 100), q("c.status != 'pending'", 40)]);
   return (
     <>
       <h1>Moderation</h1>

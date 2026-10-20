@@ -5,12 +5,12 @@ Next.js 16 (App Router, TypeScript) fan site for *The Mandela Catalogue*. SQLite
 ## Commands
 - `npm run dev` / `npm run build` / `npm start`
 - `npm run typecheck` (run after every change)
-- `npm test` (Vitest, runs in about 2s; run after touching actions, auth or db)
+- `npm test` (Vitest, runs in about 2s; run after touching actions, auth or db). `npm run test:libsql` runs the same suite through the libSQL client, the code path Turso uses in production.
 - `npm run e2e` (builds, then Playwright in headless Chromium, about 1 minute; run before shipping UI or flow changes. First time: `npx playwright install chromium`)
 - `npm run db:reset` wipes content and reloads the seed (keeps users)
 
 ## Where things are
-- `src/lib/db.ts`: connection, schema (`CREATE TABLE IF NOT EXISTS`), auto-seed on an empty database, admin bootstrap from env.
+- `src/lib/db.ts`: async database layer with two drivers: a local SQLite file via better-sqlite3 (dev, tests, Docker) or Turso over HTTP via `@libsql/client/web` when `TURSO_DATABASE_URL` is set (Vercel). Also the schema (`CREATE TABLE IF NOT EXISTS`, split on `;`, so no semicolons inside a statement), `migrate()`, auto-seed on an empty database, and admin bootstrap from env. Query with `await sql.get/all/run(...)` and `sql.batch([...])` (one transaction, one round trip).
 - `src/lib/seed.ts` + `seed-data.json` + `defaults.ts`: original content and every site setting with its default. A new setting key goes in `DEFAULT_SETTINGS` and `SETTING_FIELDS` (it shows up in Admin > Site settings by itself).
 - `src/lib/entities.ts`: describes each admin-editable table (fields, types, columns). Adding a field = add a column in `db.ts` schema (plus a migration for existing databases) and a field here. The generic admin list and form pages read this file.
 - `src/lib/content.ts`: read queries used by the public pages.
@@ -20,6 +20,8 @@ Next.js 16 (App Router, TypeScript) fan site for *The Mandela Catalogue*. SQLite
 - `src/components/`: client components. Never import from `@/lib/content` values or `@/lib/db` in a client component (types only with `import type`).
 
 ## Rules
+- All database access is async and goes through `sql` (or `getDb()`). Use plain SQLite SQL that both drivers accept, use `sql.batch` for anything that must be atomic, and delete child rows (comments) explicitly instead of relying on foreign-key cascades. Content getters in `content.ts` are async too; `getSettings` and `getTapes` are memoized per request with React `cache`.
+- Rate limits live in the database (`src/lib/rate.ts`, table `rate_limits`), not in memory: serverless hosting runs many short-lived instances. `tooMany` is async and records the attempt before counting.
 - Admin pages AND admin actions must each call `requireAdmin()`. Layout checks alone are not enough in Next.
 - No schema migrations framework yet: when changing a table, add an `ALTER TABLE ... ADD COLUMN` guarded by a column check in `db()` so existing databases keep working. `migrate()` in `src/lib/db.ts` is where these go (`youtube_url` was the first). `tests/migration.test.ts` shows how to test one against an old-schema file.
 - Do NOT add screenshots, frames, character art or redrawn characters from the series (owner: Alex Kister). Link to the originals.

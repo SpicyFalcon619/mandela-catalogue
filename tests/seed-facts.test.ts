@@ -26,27 +26,27 @@ const EPISODES: [title: string, date: string, runtime: string][] = [
 ];
 
 describe("seed content matches its sources", () => {
-  it("lists all 19 videos with the dates and runtimes Wikipedia gives", () => {
-    expect(getTapes().map((t) => [t.title, t.releaseDate, t.runtime])).toEqual(EPISODES);
+  it("lists all 19 videos with the dates and runtimes Wikipedia gives", async () => {
+    expect((await getTapes()).map((t) => [t.title, t.releaseDate, t.runtime])).toEqual(EPISODES);
   });
 
-  it("dates Vol. 6 to 2011, as Wikipedia does", () => {
-    const vol6 = getTapes().find((t) => t.title.endsWith("Vol. 6"))!;
+  it("dates Vol. 6 to 2011, as Wikipedia does", async () => {
+    const vol6 = (await getTapes()).find((t) => t.title.endsWith("Vol. 6"))!;
     expect(vol6.inworldSort).toBe(2011);
     expect(vol6.confidence).toBe("stated");
   });
 
-  it("does not define M.A.D. or the T.H.I.N.K. Principle beyond the sources (project rule)", () => {
-    const all = JSON.stringify([getGuide(), getCards("premise"), getCards("theme"), getCards("mixup"), getCharacters()]);
+  it("does not define M.A.D. or the T.H.I.N.K. Principle beyond the sources (project rule)", async () => {
+    const all = JSON.stringify(await Promise.all([getGuide(), getCards("premise"), getCards("theme"), getCards("mixup"), getCharacters()]));
     expect(all).not.toMatch(/Metaphysical/i);
-    const vocab = getGuide().find((g) => g.label === "Vocabulary")!.body;
+    const vocab = (await getGuide()).find((g) => g.label === "Vocabulary")!.body;
     expect(vocab).toMatch(/M\.A\.D\.[^\n]*does not say what the letters stand for/);
     expect(vocab).toMatch(/T\.H\.I\.N\.K\. Principle:\*\* the title of a segment in Vol\. 1/);
     expect(vocab).toMatch(/My sources do not say what it means/);
   });
 
-  it("marks inferred dates of death as inferred", () => {
-    for (const c of getCharacters()) {
+  it("marks inferred dates of death as inferred", async () => {
+    for (const c of await getCharacters()) {
       if (/^Dies in 1992/.test(c.status)) expect(c.status, c.name).toMatch(/inferred/);
     }
   });

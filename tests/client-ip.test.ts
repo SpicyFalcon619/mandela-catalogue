@@ -26,7 +26,7 @@ describe("login lockout cannot be dodged by forging headers", () => {
   beforeEach(resetRequest);
 
   it("keeps counting when the attacker rotates a fake left-most X-Forwarded-For", async () => {
-    const u = makeUser("user");
+    const u = await makeUser("user");
     for (let i = 0; i < 6; i++) {
       reqHeaders.set("x-forwarded-for", `9.9.9.${i}, 198.51.100.50`);
       await loginAction({}, form({ username: u.username, password: `wrong-guess-${i}` }));
@@ -37,7 +37,7 @@ describe("login lockout cannot be dodged by forging headers", () => {
   });
 
   it("does the same with Fly-Client-IP, even if X-Forwarded-For changes", async () => {
-    const u = makeUser("user");
+    const u = await makeUser("user");
     for (let i = 0; i < 6; i++) {
       reqHeaders.set("fly-client-ip", "203.0.113.77");
       reqHeaders.set("x-forwarded-for", `7.7.7.${i}`);
@@ -48,7 +48,7 @@ describe("login lockout cannot be dodged by forging headers", () => {
   });
 
   it("still lets a different real client in", async () => {
-    const u = makeUser("user");
+    const u = await makeUser("user");
     reqHeaders.set("fly-client-ip", "203.0.113.200");
     await expect(loginAction({}, form({ username: u.username, password: u.password }))).rejects.toThrow(/NEXT_REDIRECT/);
   });

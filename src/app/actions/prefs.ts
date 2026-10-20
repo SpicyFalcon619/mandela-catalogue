@@ -1,7 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { db } from "@/lib/db";
+import { sql } from "@/lib/db";
 import { cookieSecure, getUser } from "@/lib/auth";
 import { PREFS_COOKIE, defaultPrefs, sanitizePrefs, type Prefs } from "@/lib/prefs";
 
@@ -15,5 +15,5 @@ export async function savePrefs(input: Prefs): Promise<void> {
     maxAge: 60 * 60 * 24 * 365,
   });
   const u = await getUser();
-  if (u) db().prepare("UPDATE users SET prefs = ? WHERE id = ?").run(JSON.stringify(clean), u.id);
+  if (u) await sql.run("UPDATE users SET prefs = ? WHERE id = ?", JSON.stringify(clean), u.id);
 }

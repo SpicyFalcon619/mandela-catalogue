@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { PasswordForm } from "@/components/AuthForm";
-import { db } from "@/lib/db";
+import { sql } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -8,11 +8,10 @@ export const metadata = { title: "Your account" };
 
 export default async function AccountPage() {
   const user = await requireUser("/account");
-  const posts = db()
-    .prepare(
-      "SELECT c.id, c.kind, c.body, c.status, c.created_at, c.tape_id, t.title FROM comments c JOIN tapes t ON t.id = c.tape_id WHERE c.user_id = ? ORDER BY c.created_at DESC LIMIT 50",
-    )
-    .all(user.id) as { id: number; kind: string; body: string; status: string; created_at: string; tape_id: number; title: string }[];
+  const posts = await sql.all<{ id: number; kind: string; body: string; status: string; created_at: string; tape_id: number; title: string }>(
+    "SELECT c.id, c.kind, c.body, c.status, c.created_at, c.tape_id, t.title FROM comments c JOIN tapes t ON t.id = c.tape_id WHERE c.user_id = ? ORDER BY c.created_at DESC LIMIT 50",
+    user.id,
+  );
   return (
     <main>
       <div className="crumbs"><Link href="/">← Home</Link></div>

@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import { startSession, endSession } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { sql } from "@/lib/db";
 import { jar, reqHeaders } from "./setup";
 
 export function form(fields: Record<string, string | string[]>): FormData {
@@ -24,12 +24,10 @@ export async function redirectOf(run: () => Promise<unknown>): Promise<string | 
 let counter = 0;
 
 /** Inserts a user directly (cheap bcrypt cost) and returns its id. */
-export function makeUser(role: "user" | "admin" = "user", password = "correct-horse-battery"): { id: number; username: string; password: string } {
+export async function makeUser(role: "user" | "admin" = "user", password = "correct-horse-battery"): Promise<{ id: number; username: string; password: string }> {
   const username = `${role}_${++counter}`;
-  const res = db()
-    .prepare("INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)")
-    .run(username, bcrypt.hashSync(password, 4), role);
-  return { id: Number(res.lastInsertRowid), username, password };
+  const res = await sql.run("INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)", username, bcrypt.hashSync(password, 4), role);
+  return { id: res.lastId, username, password };
 }
 
 export async function signInAs(userId: number) {
@@ -46,4 +44,4 @@ export function resetRequest() {
   reqHeaders.clear();
 }
 
-export const count = (sql: string, ...args: unknown[]) => (db().prepare(sql).get(...args) as { n: number }).n;
+export const count = async (q: string, ...args: (string | number | null)[]) => (await sql.get<{ n: number }>(q, ...args))!.n;

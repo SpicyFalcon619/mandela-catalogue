@@ -29,23 +29,23 @@ describe("adding youtube_url to an existing database", () => {
     ins.run(40, "A tape the admin added", "2030-01-01", "1:00"); // not in the seed
     old.close();
 
-    const { db } = await import("@/lib/db");
-    const rows = db().prepare("SELECT id, youtube_url FROM tapes ORDER BY id").all() as { id: number; youtube_url: string }[];
+    const { sql } = await import("@/lib/db");
+    const rows = await sql.all<{ id: number; youtube_url: string }>("SELECT id, youtube_url FROM tapes ORDER BY id");
     expect(rows).toEqual([
       { id: 1, youtube_url: "https://www.youtube.com/watch?v=q0EpOiu8YkI" },
       { id: 2, youtube_url: "" },
       { id: 40, youtube_url: "" },
     ]);
     // The column is there for new inserts too.
-    db().prepare("INSERT INTO tapes (title, release_date, runtime, youtube_url) VALUES ('x','2031-01-01','1:00','https://youtu.be/abcdefghijk')").run();
+    await sql.run("INSERT INTO tapes (title, release_date, runtime, youtube_url) VALUES ('x','2031-01-01','1:00','https://youtu.be/abcdefghijk')");
   });
 
   it("does not run again or overwrite a link an admin set afterwards", async () => {
-    const { db } = await import("@/lib/db");
-    db().prepare("UPDATE tapes SET youtube_url = 'https://youtu.be/custom000000' WHERE id = 1").run();
+    const { sql, getDb } = await import("@/lib/db");
+    await sql.run("UPDATE tapes SET youtube_url = 'https://youtu.be/custom000000' WHERE id = 1");
     // Re-running the backfill (as a restart would not, but a repeat of the guard must be harmless) keeps the admin's value.
     const { backfillYoutubeLinks } = await import("@/lib/seed");
-    backfillYoutubeLinks(db());
-    expect((db().prepare("SELECT youtube_url FROM tapes WHERE id = 1").get() as { youtube_url: string }).youtube_url).toBe("https://youtu.be/custom000000");
+    await backfillYoutubeLinks(await getDb());
+    expect((await sql.get<{ youtube_url: string }>("SELECT youtube_url FROM tapes WHERE id = 1"))!.youtube_url).toBe("https://youtu.be/custom000000");
   });
 });

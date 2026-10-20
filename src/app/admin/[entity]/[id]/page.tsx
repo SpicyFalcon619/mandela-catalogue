@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { saveEntity } from "@/app/actions/admin";
 import { getTapes } from "@/lib/content";
-import { db } from "@/lib/db";
+import { sql } from "@/lib/db";
 import { entityByKey, type Field } from "@/lib/entities";
 
 type Row = Record<string, unknown>;
@@ -107,10 +107,10 @@ export default async function EntityEdit({ params, searchParams }: { params: Pro
   if (id !== "new") {
     const n = Number(id);
     if (!Number.isInteger(n)) notFound();
-    row = (db().prepare(`SELECT * FROM ${entity.table} WHERE id = ?`).get(n) as Row | undefined) ?? null;
+    row = (await sql.get<Row>(`SELECT * FROM ${entity.table} WHERE id = ?`, n)) ?? null;
     if (!row) notFound();
   }
-  const tapeOptions = getTapes().map((t) => ({ id: t.id, label: `${String(t.number).padStart(2, "0")} ${t.title}` }));
+  const tapeOptions = (await getTapes()).map((t) => ({ id: t.id, label: `${String(t.number).padStart(2, "0")} ${t.title}` }));
   return (
     <>
       <h1>{row ? `Edit ${entity.singular}` : `New ${entity.singular}`}</h1>

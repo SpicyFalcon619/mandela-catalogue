@@ -2,7 +2,7 @@ import { requireAdmin } from "@/lib/auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { deleteEntity } from "@/app/actions/admin";
-import { db } from "@/lib/db";
+import { sql } from "@/lib/db";
 import { entityByKey } from "@/lib/entities";
 
 function cell(v: unknown, type: string) {
@@ -17,7 +17,7 @@ export default async function EntityList({ params, searchParams }: { params: Pro
   const sp = await searchParams;
   const entity = entityByKey(key);
   if (!entity) notFound();
-  const rows = db().prepare(`SELECT * FROM ${entity.table} ORDER BY ${entity.orderBy}`).all() as Record<string, unknown>[];
+  const rows = await sql.all<Record<string, unknown>>(`SELECT * FROM ${entity.table} ORDER BY ${entity.orderBy}`);
   const cols = entity.columns.map((c) => entity.fields.find((f) => f.name === c)!).filter(Boolean);
   return (
     <>

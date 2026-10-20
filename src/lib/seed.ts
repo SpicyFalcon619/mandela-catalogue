@@ -1,4 +1,4 @@
-import type Database from "better-sqlite3";
+import type { Db, Stmt } from "./db";
 import { DEFAULT_SETTINGS } from "./defaults";
 import data from "./seed-data.json";
 
@@ -97,65 +97,75 @@ const SOURCES = [
 ];
 
 /** Fills the content tables once, on an empty database. Never touches users or comments. */
-export function seedIfEmpty(d: Database.Database) {
-  const hasContent = d.prepare("SELECT COUNT(*) AS n FROM tapes").get() as { n: number };
-  const insSetting = d.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)");
+export async function seedIfEmpty(d: Db) {
+  const [{ n }, have] = await Promise.all([
+    d.get<{ n: number }>("SELECT COUNT(*) AS n FROM tapes").then((r) => r ?? { n: 0 }),
+    d.all<{ key: string }>("SELECT key FROM settings"),
+  ]);
   // New settings keys added in later versions are filled in on every start.
-  for (const [k, v] of Object.entries(DEFAULT_SETTINGS)) insSetting.run(k, v);
-  if (hasContent.n > 0) return;
-  fillContent(d);
+  await insertMissingSettings(d, new Set(have.map((r) => r.key)));
+  if (n > 0) return;
+  await d.batch(contentStatements());
 }
+
+async function insertMissingSettings(d: Db, have: Set<string>) {
+  const missing = Object.entries(DEFAULT_SETTINGS).filter(([k]) => !have.has(k));
+  if (missing.length) await d.batch(missing.map(([k, v]) => settingStmt(k, v)));
+}
+
+const settingStmt = (k: string, v: string): Stmt => ({ sql: "INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)", args: [k, v] });
 
 /**
  * Adds the YouTube links to tapes that were seeded before the column existed. Matches on id and title so
  * tapes an admin edited or added are left alone, and never overwrites a link that is already set.
  */
-export function backfillYoutubeLinks(d: Database.Database) {
-  const up = d.prepare("UPDATE tapes SET youtube_url = ? WHERE id = ? AND title = ? AND youtube_url = ''");
-  d.transaction(() => {
-    for (const x of data.TAPES as RawTape[]) up.run(x.yt, x.id, x.t);
-  })();
+export async function backfillYoutubeLinks(d: Db) {
+  await d.batch(
+    (data.TAPES as RawTape[]).map((x) => ({
+      sql: "UPDATE tapes SET youtube_url = ? WHERE id = ? AND title = ? AND youtube_url = ''",
+      args: [x.yt, x.id, x.t],
+    })),
+  );
 }
 
-/** Wipes content (not users) and loads the original data again. */
-export function resetContent(d: Database.Database) {
-  d.transaction(() => {
-    for (const t of ["comments", "tapes", "characters", "quiz", "sources", "guide", "cards"]) d.exec(`DELETE FROM ${t}`);
-    d.exec("DELETE FROM sqlite_sequence WHERE name IN ('comments','tapes','characters','quiz','sources','guide','cards')");
-    d.exec("DELETE FROM settings");
-  })();
-  const insSetting = d.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)");
-  for (const [k, v] of Object.entries(DEFAULT_SETTINGS)) insSetting.run(k, v);
-  fillContent(d);
+/** Wipes content (not users) and loads the original data again, as one transaction. */
+export async function resetContent(d: Db) {
+  const wipe: Stmt[] = ["comments", "tapes", "characters", "quiz", "sources", "guide", "cards"].map((t) => ({ sql: `DELETE FROM ${t}` }));
+  wipe.push({ sql: "DELETE FROM sqlite_sequence WHERE name IN ('comments','tapes','characters','quiz','sources','guide','cards')" });
+  wipe.push({ sql: "DELETE FROM settings" });
+  const settings = Object.entries(DEFAULT_SETTINGS).map(([k, v]) => settingStmt(k, v));
+  await d.batch([...wipe, ...settings, ...contentStatements()]);
 }
 
-function fillContent(d: Database.Database) {
+/** Every insert for the original content. Tapes come first: they have fixed ids, so a second seed running at the same
+ *  moment fails on the primary key and rolls back, instead of duplicating the other tables. */
+function contentStatements(): Stmt[] {
   const tapes = data.TAPES as RawTape[];
   const cases = data.CASES as RawCase[];
   const qs = data.QS as RawQ[];
-  d.transaction(() => {
-    const t = d.prepare(
-      "INSERT INTO tapes (id, title, release_date, runtime, is_main, inworld_label, inworld_sort, confidence, threads, summary, note, youtube_url) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
-    );
-    for (const x of tapes) t.run(x.id, x.t, x.d, x.len, x.main ? 1 : 0, x.iw, x.iws, x.c, JSON.stringify(x.th), x.s, x.n, x.yt);
-
-    const c = d.prepare("INSERT INTO characters (name, actor, bio, status, status_hidden, tape_ids, sort) VALUES (?,?,?,?,?,?,?)");
-    cases.forEach((x, i) => {
-      const hidden = x.st.includes("redact");
-      const status = x.st.replace(/<[^>]+>/g, "").replace(/^Status:\s*/, "");
-      c.run(x.n, x.a, x.p, status.charAt(0).toUpperCase() + status.slice(1), hidden ? 1 : 0, JSON.stringify(x.ap), i);
+  const out: Stmt[] = [];
+  for (const x of tapes) {
+    out.push({
+      sql: "INSERT INTO tapes (id, title, release_date, runtime, is_main, inworld_label, inworld_sort, confidence, threads, summary, note, youtube_url) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+      args: [x.id, x.t, x.d, x.len, x.main ? 1 : 0, x.iw, x.iws, x.c, JSON.stringify(x.th), x.s, x.n, x.yt],
     });
-
-    const q = d.prepare("INSERT INTO quiz (question, options, answer, note, sort) VALUES (?,?,?,?,?)");
-    qs.forEach((x, i) => q.run(x.q, JSON.stringify(x.o), x.a, x.n, i));
-
-    const s = d.prepare("INSERT INTO sources (title, url, note, sort) VALUES (?,?,?,?)");
-    SOURCES.forEach((x, i) => s.run(x[0], x[1], x[2], i));
-
-    const g = d.prepare("INSERT INTO guide (label, body, aside_title, aside_body, widget, sort) VALUES (?,?,?,?,?,?)");
-    GUIDE.forEach((x, i) => g.run(x.label, x.body, x.aside_title, x.aside_body, x.widget, i));
-
-    const k = d.prepare("INSERT INTO cards (kind, title, body, sort) VALUES (?,?,?,?)");
-    CARDS.forEach((x, i) => k.run(x.kind, x.title, x.body, i));
-  })();
+  }
+  cases.forEach((x, i) => {
+    const hidden = x.st.includes("redact");
+    const status = x.st.replace(/<[^>]+>/g, "").replace(/^Status:\s*/, "");
+    out.push({
+      sql: "INSERT INTO characters (name, actor, bio, status, status_hidden, tape_ids, sort) VALUES (?,?,?,?,?,?,?)",
+      args: [x.n, x.a, x.p, status.charAt(0).toUpperCase() + status.slice(1), hidden ? 1 : 0, JSON.stringify(x.ap), i],
+    });
+  });
+  qs.forEach((x, i) => out.push({ sql: "INSERT INTO quiz (question, options, answer, note, sort) VALUES (?,?,?,?,?)", args: [x.q, JSON.stringify(x.o), x.a, x.n, i] }));
+  SOURCES.forEach((x, i) => out.push({ sql: "INSERT INTO sources (title, url, note, sort) VALUES (?,?,?,?)", args: [x[0], x[1], x[2], i] }));
+  GUIDE.forEach((x, i) =>
+    out.push({
+      sql: "INSERT INTO guide (label, body, aside_title, aside_body, widget, sort) VALUES (?,?,?,?,?,?)",
+      args: [x.label, x.body, x.aside_title, x.aside_body, x.widget, i],
+    }),
+  );
+  CARDS.forEach((x, i) => out.push({ sql: "INSERT INTO cards (kind, title, body, sort) VALUES (?,?,?,?)", args: [x.kind, x.title, x.body, i] }));
+  return out;
 }

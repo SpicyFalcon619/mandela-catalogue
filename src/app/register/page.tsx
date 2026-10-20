@@ -9,7 +9,7 @@ export const metadata = { title: "Sign up" };
 export default async function RegisterPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const next = safeNext((await searchParams).next);
   if (await getUser()) redirect(next);
-  if (getSettings().registration_open !== "1") {
+  if ((await getSettings()).registration_open !== "1") {
     return (
       <main className="authbox">
         <h1>Sign-ups closed</h1>

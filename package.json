@@ -11,9 +11,11 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "e2e": "npm run build && playwright test"
+    "e2e": "npm run build && playwright test",
+    "test:libsql": "vitest run --config vitest.libsql.config.mts"
   },
   "dependencies": {
+    "@libsql/client": "^0.18.0",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^13.0.3",
     "jose": "^6.2.12",

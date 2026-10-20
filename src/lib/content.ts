@@ -1,4 +1,5 @@
-import { db } from "./db";
+import { cache } from "react";
+import { sql } from "./db";
 import { DEFAULT_SETTINGS } from "./defaults";
 import { youtubeHref } from "./youtube";
 
@@ -42,12 +43,13 @@ function parseJson<T>(s: string, fallback: T): T {
   }
 }
 
-export function getSettings(): Settings {
-  const rows = db().prepare("SELECT key, value FROM settings").all() as { key: string; value: string }[];
+// `cache` makes these run once per request even when the layout and the page both ask.
+export const getSettings = cache(async (): Promise<Settings> => {
+  const rows = await sql.all<{ key: string; value: string }>("SELECT key, value FROM settings");
   const out: Settings = { ...DEFAULT_SETTINGS };
   for (const r of rows) out[r.key] = r.value;
   return out;
-}
+});
 
 type TapeRow = {
   id: number; title: string; release_date: string; runtime: string; is_main: number; inworld_label: string;
@@ -73,38 +75,38 @@ function mapTape(r: TapeRow, number: number): Tape {
 }
 
 /** Published tapes in release order; `number` is the position in that order. */
-export function getTapes(): Tape[] {
-  const rows = db().prepare("SELECT * FROM tapes WHERE published = 1 ORDER BY release_date, id").all() as TapeRow[];
+export const getTapes = cache(async (): Promise<Tape[]> => {
+  const rows = await sql.all<TapeRow>("SELECT * FROM tapes WHERE published = 1 ORDER BY release_date, id");
   return rows.map((r, i) => mapTape(r, i + 1));
-}
-export function getTape(id: number): Tape | null {
-  return getTapes().find((t) => t.id === id) ?? null;
+});
+export async function getTape(id: number): Promise<Tape | null> {
+  return (await getTapes()).find((t) => t.id === id) ?? null;
 }
 
-export function getCharacters(): Character[] {
-  const rows = db().prepare("SELECT * FROM characters WHERE published = 1 ORDER BY sort, id").all() as {
+export async function getCharacters(): Promise<Character[]> {
+  const rows = await sql.all<{
     id: number; name: string; actor: string; bio: string; status: string; status_hidden: number; tape_ids: string;
-  }[];
+  }>("SELECT * FROM characters WHERE published = 1 ORDER BY sort, id");
   return rows.map((r) => ({
     id: r.id, name: r.name, actor: r.actor, bio: r.bio, status: r.status,
     statusHidden: !!r.status_hidden, tapeIds: parseJson<number[]>(r.tape_ids, []),
   }));
 }
-export function getQuiz(): QuizQ[] {
-  const rows = db().prepare("SELECT * FROM quiz WHERE published = 1 ORDER BY sort, id").all() as {
+export async function getQuiz(): Promise<QuizQ[]> {
+  const rows = await sql.all<{
     id: number; question: string; options: string; answer: number; note: string;
-  }[];
+  }>("SELECT * FROM quiz WHERE published = 1 ORDER BY sort, id");
   return rows.map((r) => ({ id: r.id, question: r.question, options: parseJson<string[]>(r.options, []), answer: r.answer, note: r.note }));
 }
-export function getSources(): Source[] {
-  return db().prepare("SELECT id, title, url, note FROM sources WHERE published = 1 ORDER BY sort, id").all() as Source[];
+export async function getSources(): Promise<Source[]> {
+  return sql.all<Source>("SELECT id, title, url, note FROM sources WHERE published = 1 ORDER BY sort, id");
 }
-export function getGuide(): GuideTab[] {
-  const rows = db().prepare("SELECT * FROM guide WHERE published = 1 ORDER BY sort, id").all() as {
+export async function getGuide(): Promise<GuideTab[]> {
+  const rows = await sql.all<{
     id: number; label: string; body: string; aside_title: string; aside_body: string; widget: string;
-  }[];
+  }>("SELECT * FROM guide WHERE published = 1 ORDER BY sort, id");
   return rows.map((r) => ({ id: r.id, label: r.label, body: r.body, asideTitle: r.aside_title, asideBody: r.aside_body, widget: r.widget }));
 }
-export function getCards(kind: string): Card[] {
-  return db().prepare("SELECT id, kind, title, body FROM cards WHERE kind = ? AND published = 1 ORDER BY sort, id").all(kind) as Card[];
+export async function getCards(kind: string): Promise<Card[]> {
+  return sql.all<Card>("SELECT id, kind, title, body FROM cards WHERE kind = ? AND published = 1 ORDER BY sort, id", kind);
 }

@@ -1,4 +1,4 @@
-import { db } from "../src/lib/db";
+import { getDb } from "../src/lib/db";
 import { resetContent } from "../src/lib/seed";
 
 // Usage: npm run db:reset
@@ -10,6 +10,7 @@ if (!process.argv.includes("--reset")) {
   );
   process.exit(0);
 }
-const d = db();
-resetContent(d);
+// Works against whatever database the environment points at: ./data/mandela.db, DATABASE_PATH, or Turso
+// when TURSO_DATABASE_URL is set.
+await resetContent(await getDb());
 console.log("Content reset.");

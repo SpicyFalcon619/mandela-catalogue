@@ -7,7 +7,7 @@ import { THEMES } from "@/lib/prefs";
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ saved?: string }> }) {
   await requireAdmin(); // pages check too: layouts are not re-run on client-side navigation
   const sp = await searchParams;
-  const s = getSettings();
+  const s = await getSettings();
   const groups = [...new Set(SETTING_FIELDS.map((f) => f.group))];
   return (
     <>

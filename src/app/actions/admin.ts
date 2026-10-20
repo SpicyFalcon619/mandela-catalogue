@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { db } from "@/lib/db";
+import { getDb, sql, type Stmt } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { DEFAULT_SETTINGS, SETTING_FIELDS } from "@/lib/defaults";
 import { entityByKey, type Field } from "@/lib/entities";
@@ -72,11 +72,11 @@ export async function saveEntity(entityKey: string, fd: FormData) {
   const cols = entity.fields.map((f) => f.name);
   const vals = cols.map((c) => values[c] as string | number | null);
   if (idRaw === "new") {
-    db().prepare(`INSERT INTO ${entity.table} (${cols.join(",")}) VALUES (${cols.map(() => "?").join(",")})`).run(...vals);
+    await sql.run(`INSERT INTO ${entity.table} (${cols.join(",")}) VALUES (${cols.map(() => "?").join(",")})`, ...vals);
   } else {
     const id = Number(idRaw);
     if (!Number.isInteger(id)) redirect(`/admin/${entityKey}`);
-    db().prepare(`UPDATE ${entity.table} SET ${cols.map((c) => `${c} = ?`).join(",")} WHERE id = ?`).run(...vals, id);
+    await sql.run(`UPDATE ${entity.table} SET ${cols.map((c) => `${c} = ?`).join(",")} WHERE id = ?`, ...vals, id);
   }
   revalidatePath("/", "layout");
   redirect(`/admin/${entityKey}?saved=1`);
@@ -87,28 +87,33 @@ export async function deleteEntity(entityKey: string, fd: FormData) {
   const entity = entityByKey(entityKey);
   if (!entity) redirect("/admin");
   const id = Number(fd.get("id"));
-  if (Number.isInteger(id)) db().prepare(`DELETE FROM ${entity.table} WHERE id = ?`).run(id);
+  if (Number.isInteger(id)) {
+    const stmts: Stmt[] = [];
+    // Comments belong to a tape; remove them explicitly rather than relying on foreign-key cascades.
+    if (entityKey === "tapes") stmts.push({ sql: "DELETE FROM comments WHERE tape_id = ?", args: [id] });
+    stmts.push({ sql: `DELETE FROM ${entity.table} WHERE id = ?`, args: [id] });
+    await sql.batch(stmts);
+  }
   revalidatePath("/", "layout");
   redirect(`/admin/${entityKey}?deleted=1`);
 }
 
 export async function saveSettings(fd: FormData) {
   await requireAdmin();
-  const up = db().prepare("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value");
-  db().transaction(() => {
-    for (const f of SETTING_FIELDS) {
-      if (!(f.key in DEFAULT_SETTINGS)) continue;
-      let v: string;
-      if (f.kind === "bool") v = fd.get(f.key) === "on" ? "1" : "0";
-      else {
-        v = String(fd.get(f.key) ?? "").trim();
-        if (f.kind === "color" && !/^#[0-9a-fA-F]{6}$/.test(v)) v = DEFAULT_SETTINGS[f.key];
-        if (f.kind === "date" && !/^\d{4}-\d{2}-\d{2}$/.test(v)) v = DEFAULT_SETTINGS[f.key];
-        if (f.kind === "theme" && !["tape", "phosphor", "amber", "mono", "paper"].includes(v)) v = "tape";
-      }
-      up.run(f.key, v);
+  const stmts: Stmt[] = [];
+  for (const f of SETTING_FIELDS) {
+    if (!(f.key in DEFAULT_SETTINGS)) continue;
+    let v: string;
+    if (f.kind === "bool") v = fd.get(f.key) === "on" ? "1" : "0";
+    else {
+      v = String(fd.get(f.key) ?? "").trim();
+      if (f.kind === "color" && !/^#[0-9a-fA-F]{6}$/.test(v)) v = DEFAULT_SETTINGS[f.key];
+      if (f.kind === "date" && !/^\d{4}-\d{2}-\d{2}$/.test(v)) v = DEFAULT_SETTINGS[f.key];
+      if (f.kind === "theme" && !["tape", "phosphor", "amber", "mono", "paper"].includes(v)) v = "tape";
     }
-  })();
+    stmts.push({ sql: "INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", args: [f.key, v] });
+  }
+  await sql.batch(stmts);
   revalidatePath("/", "layout");
   redirect("/admin/settings?saved=1");
 }
@@ -119,9 +124,9 @@ export async function moderateComment(fd: FormData) {
   const action = String(fd.get("action"));
   const tape = Number(fd.get("tape_id"));
   if (Number.isInteger(id)) {
-    if (action === "approve") db().prepare("UPDATE comments SET status='visible' WHERE id=?").run(id);
-    else if (action === "hide") db().prepare("UPDATE comments SET status='hidden' WHERE id=?").run(id);
-    else if (action === "delete") db().prepare("DELETE FROM comments WHERE id=?").run(id);
+    if (action === "approve") await sql.run("UPDATE comments SET status='visible' WHERE id=?", id);
+    else if (action === "hide") await sql.run("UPDATE comments SET status='hidden' WHERE id=?", id);
+    else if (action === "delete") await sql.run("DELETE FROM comments WHERE id=?", id);
   }
   if (Number.isInteger(tape)) revalidatePath(`/tapes/${tape}`);
   revalidatePath("/admin/moderation");
@@ -132,18 +137,23 @@ export async function updateUser(fd: FormData) {
   const id = Number(fd.get("id"));
   const action = String(fd.get("action"));
   if (!Number.isInteger(id) || id === me.id) return; // you cannot change yourself here
-  if (action === "make_admin") db().prepare("UPDATE users SET role='admin' WHERE id=?").run(id);
-  else if (action === "make_user") db().prepare("UPDATE users SET role='user' WHERE id=?").run(id);
-  else if (action === "ban") db().prepare("UPDATE users SET banned=1 WHERE id=?").run(id);
-  else if (action === "unban") db().prepare("UPDATE users SET banned=0 WHERE id=?").run(id);
-  else if (action === "delete") db().prepare("DELETE FROM users WHERE id=?").run(id);
+  if (action === "make_admin") await sql.run("UPDATE users SET role='admin' WHERE id=?", id);
+  else if (action === "make_user") await sql.run("UPDATE users SET role='user' WHERE id=?", id);
+  else if (action === "ban") await sql.run("UPDATE users SET banned=1 WHERE id=?", id);
+  else if (action === "unban") await sql.run("UPDATE users SET banned=0 WHERE id=?", id);
+  else if (action === "delete") {
+    await sql.batch([
+      { sql: "DELETE FROM comments WHERE user_id=?", args: [id] },
+      { sql: "DELETE FROM users WHERE id=?", args: [id] },
+    ]);
+  }
   revalidatePath("/admin/users");
 }
 
 export async function resetAllContent(fd: FormData) {
   await requireAdmin();
   if (String(fd.get("confirm")).trim() !== "RESET") redirect("/admin?error=Type+RESET+to+confirm");
-  resetContent(db());
+  await resetContent(await getDb());
   revalidatePath("/", "layout");
   redirect("/admin?reset=1");
 }

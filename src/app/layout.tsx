@@ -11,7 +11,7 @@ const FONTS =
   "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Special+Elite&family=VT323&display=swap";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const s = getSettings();
+  const s = await getSettings();
   return {
     title: s.site_title,
     description: "An interactive fan field guide to The Mandela Catalogue: every tape, the Alternates, the cast, film news and linked sources.",
@@ -24,8 +24,7 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, view
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const [prefs, user] = await Promise.all([getPrefs(), getUser()]);
-  const s = getSettings();
+  const [prefs, user, s] = await Promise.all([getPrefs(), getUser(), getSettings()]);
   const sections = [
     ["premise", "Premise", "show_premise"],
     ["tapes", "Tapes", "show_tapes"],

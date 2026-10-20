@@ -14,7 +14,7 @@ beforeEach(() => {
 
 describe("failed submits echo non-secret input", () => {
   it("login keeps the username, whatever the error", async () => {
-    const u = makeUser("user");
+    const u = await makeUser("user");
     const wrong = await loginAction({}, form({ username: ` ${u.username} `, password: "nope-nope-nope" }));
     expect(wrong).toEqual({ error: "Wrong username or password.", username: u.username });
     const unknown = await loginAction({}, form({ username: "nobody_here", password: "x" }));
@@ -33,13 +33,13 @@ describe("failed submits echo non-secret input", () => {
       expect(res.username).toBe(c.username);
       expect(JSON.stringify(res)).not.toContain(c.password);
     }
-    const taken = makeUser("user");
+    const taken = await makeUser("user");
     const res = await registerAction({}, form({ username: taken.username, password: "long-enough-pw", confirm: "long-enough-pw" }));
     expect(res).toEqual({ error: "That username is taken.", username: taken.username });
   });
 
   it("a rejected comment gives the draft and its type back", async () => {
-    await signInAs(makeUser("user").id);
+    await signInAs((await makeUser("user")).id);
     const res = await postComment({}, form({ tape_id: "999999", kind: "theory", body: "My long, carefully written theory" }));
     expect(res.error).toMatch(/does not exist/);
     expect(res.body).toBe("My long, carefully written theory");
@@ -47,7 +47,7 @@ describe("failed submits echo non-secret input", () => {
   });
 
   it("a rate-limited comment keeps the draft too", async () => {
-    await signInAs(makeUser("user").id);
+    await signInAs((await makeUser("user")).id);
     let last = {} as Awaited<ReturnType<typeof postComment>>;
     for (let i = 0; i < 6; i++) last = await postComment({}, form({ tape_id: "1", kind: "comment", body: `draft number ${i}` }));
     expect(last.error).toMatch(/Slow down/);
@@ -55,7 +55,7 @@ describe("failed submits echo non-secret input", () => {
   });
 
   it("a successful post returns no draft, so the form clears", async () => {
-    await signInAs(makeUser("user").id);
+    await signInAs((await makeUser("user")).id);
     const res = await postComment({}, form({ tape_id: "1", kind: "comment", body: "posted fine" }));
     expect(res.ok).toBeTruthy();
     expect(res.body).toBeUndefined();

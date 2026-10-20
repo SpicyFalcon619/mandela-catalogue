@@ -14,9 +14,20 @@ function hms(s: number) {
   return `${h}:${String(m).padStart(2, "0")}:${String(x).padStart(2, "0")}`;
 }
 
-export default function Home() {
-  const s = getSettings();
-  const tapes = getTapes();
+export default async function Home() {
+  const [s, tapes, premise, themes, mixups, reception, film, guide, characters, quiz, sources] = await Promise.all([
+    getSettings(),
+    getTapes(),
+    getCards("premise"),
+    getCards("theme"),
+    getCards("mixup"),
+    getCards("reception"),
+    getCards("film"),
+    getGuide(),
+    getCharacters(),
+    getQuiz(),
+    getSources(),
+  ]);
   const on = (k: string) => s[k] === "1";
   const years = tapes.length ? [...new Set(tapes.map((t) => t.releaseDate.slice(0, 4)))] : [];
   const stats = {
@@ -25,11 +36,6 @@ export default function Home() {
     footage: hms(tapes.reduce((a, t) => a + t.seconds, 0)),
     years: years.length > 1 ? `${years[0]}–${years[years.length - 1]}` : years[0] ?? "",
   };
-  const premise = getCards("premise");
-  const themes = getCards("theme");
-  const mixups = getCards("mixup");
-  const reception = getCards("reception");
-  const film = getCards("film");
 
   return (
     <main>
@@ -62,7 +68,7 @@ export default function Home() {
         <section id="guide">
           <div className="kicker">Field guide</div>
           <h2>{s.guide_title}</h2>
-          <GuideTabs tabs={getGuide()} />
+          <GuideTabs tabs={guide} />
         </section>
       )}
 
@@ -71,7 +77,7 @@ export default function Home() {
           <div className="kicker">Case files</div>
           <h2>{s.files_title}</h2>
           <p className="lede">{s.files_lede}</p>
-          <Cases characters={getCharacters()} tapes={tapes} />
+          <Cases characters={characters} tapes={tapes} />
         </section>
       )}
 
@@ -143,7 +149,7 @@ export default function Home() {
         <section id="test">
           <div className="kicker">Tracking test</div>
           <h2>{s.quiz_title}</h2>
-          <Quiz questions={getQuiz()} />
+          <Quiz questions={quiz} />
         </section>
       )}
 
@@ -153,7 +159,7 @@ export default function Home() {
           <h2>{s.sources_title}</h2>
           <p className="lede">{s.sources_lede}</p>
           <ul className="src">
-            {getSources().map((r) => (
+            {sources.map((r) => (
               <li key={r.id}>
                 <a href={r.url} target="_blank" rel="noopener noreferrer">{r.title}</a>
                 {r.note && <span>{r.note}</span>}

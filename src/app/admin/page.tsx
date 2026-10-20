@@ -1,14 +1,18 @@
 import { requireAdmin } from "@/lib/auth";
 import Link from "next/link";
 import { resetAllContent } from "@/app/actions/admin";
-import { db } from "@/lib/db";
+import { sql } from "@/lib/db";
 import { ENTITIES } from "@/lib/entities";
 
 export default async function AdminHome({ searchParams }: { searchParams: Promise<{ error?: string; reset?: string }> }) {
   await requireAdmin(); // pages check too: layouts are not re-run on client-side navigation
   const sp = await searchParams;
-  const count = (t: string) => (db().prepare(`SELECT COUNT(*) AS n FROM ${t}`).get() as { n: number }).n;
-  const pending = (db().prepare("SELECT COUNT(*) AS n FROM comments WHERE status = 'pending'").get() as { n: number }).n;
+  const n = (q: string) => sql.get<{ n: number }>(q).then((r) => r?.n ?? 0);
+  const [counts, pending, users] = await Promise.all([
+    Promise.all(ENTITIES.map((e) => n(`SELECT COUNT(*) AS n FROM ${e.table}`))),
+    n("SELECT COUNT(*) AS n FROM comments WHERE status = 'pending'"),
+    n("SELECT COUNT(*) AS n FROM users"),
+  ]);
   return (
     <>
       <h1>Admin</h1>
@@ -16,9 +20,9 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
       {sp.reset && <div className="flash">Content was reset to the original data.</div>}
       {sp.error && <div className="flash bad">{sp.error}</div>}
       <div className="statrow">
-        {ENTITIES.map((e) => (
+        {ENTITIES.map((e, i) => (
           <Link key={e.key} href={`/admin/${e.key}`} className="stat" style={{ textDecoration: "none", color: "inherit" }}>
-            <b>{count(e.table)}</b>
+            <b>{counts[i]}</b>
             <span>{e.label}</span>
           </Link>
         ))}
@@ -27,7 +31,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
           <span>Awaiting review</span>
         </Link>
         <Link href="/admin/users" className="stat" style={{ textDecoration: "none", color: "inherit" }}>
-          <b>{count("users")}</b>
+          <b>{users}</b>
           <span>Users</span>
         </Link>
       </div>

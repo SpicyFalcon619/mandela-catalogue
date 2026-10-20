@@ -1,16 +1,14 @@
 import { requireAdmin } from "@/lib/auth";
 import { updateUser } from "@/app/actions/admin";
 import { getUser } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { sql } from "@/lib/db";
 
 type U = { id: number; username: string; role: string; banned: number; created_at: string; posts: number };
 
 export default async function Users() {
   await requireAdmin(); // pages check too: layouts are not re-run on client-side navigation
   const me = await getUser();
-  const users = db()
-    .prepare("SELECT u.id, u.username, u.role, u.banned, u.created_at, (SELECT COUNT(*) FROM comments c WHERE c.user_id = u.id) AS posts FROM users u ORDER BY u.created_at DESC, u.id DESC")
-    .all() as U[];
+  const users = await sql.all<U>("SELECT u.id, u.username, u.role, u.banned, u.created_at, (SELECT COUNT(*) FROM comments c WHERE c.user_id = u.id) AS posts FROM users u ORDER BY u.created_at DESC, u.id DESC");
   const btn = (u: U, action: string, label: string, danger = false) => (
     <form action={updateUser}>
       <input type="hidden" name="id" value={u.id} />

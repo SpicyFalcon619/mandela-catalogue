@@ -278,6 +278,46 @@ test.describe("home page behaviour", () => {
     }
   });
 
+  test("switching tapes always shows exactly one summary, and it belongs to the selected tape", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForSelector(".tapewrap");
+    const state = () =>
+      page.evaluate(() => ({
+        title: document.querySelector("#now h3")!.textContent,
+        sums: [...document.querySelectorAll("#now .sum")].map((e) => e.textContent!.slice(0, 40)),
+        stills: document.querySelectorAll("#now .stills").length,
+      }));
+    const expectOne = async (label: string, mentions: RegExp) => {
+      const st = await state();
+      expect(st.sums, `${label}: summaries shown`).toHaveLength(1);
+      expect(st.sums[0], `${label}: summary text`).toMatch(mentions);
+      expect(st.stills, `${label}: stills blocks`).toBe(1);
+      return st;
+    };
+    await expectOne("initial", /2011/); // Vol. 6, the newest main volume
+    for (const [cassette, mentions] of [["PRESTO", /MandelaTech/], ["EXHIBITION", /Heathcliff/], ["INTERLUDE", /population/], ["PRESTO", /MandelaTech/]] as const) {
+      await page.locator(".tapewrap", { hasText: cassette }).locator("button.tape").click();
+      await expect(page.locator("#now h3")).toHaveText(new RegExp(`^${cassette}$`, "i"));
+      await expectOne(cassette, mentions);
+    }
+    await page.getByRole("button", { name: /Prev/ }).click();
+    await expect(page.locator("#now h3")).toHaveText(/mandela catalyst/i);
+    await expectOne("Prev", /autopsy/);
+    await page.getByRole("button", { name: /Next/ }).click();
+    await expectOne("Next", /MandelaTech/);
+  });
+
+  test("a revealed spoiler is blurred again when another tape is loaded", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: /Spoiler guard/ }).click();
+    await expect(page.locator("html")).toHaveAttribute("data-spoilers", "on");
+    await page.locator("#now .sum").click();
+    await expect(page.locator("#now .sum")).toHaveClass(/rev/);
+    await page.locator(".tapewrap", { hasText: "PRESTO" }).locator("button.tape").click();
+    await expect(page.locator("#now h3")).toHaveText(/^presto$/i);
+    await expect(page.locator("#now .sum")).not.toHaveClass(/rev/);
+  });
+
   test("the hero shows its readouts", async ({ page }) => {
     await page.goto("/");
     await expect(page.locator(".hero .kicker")).toContainText("Analog horror");

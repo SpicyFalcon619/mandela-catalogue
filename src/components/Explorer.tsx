@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Tape } from "@/lib/content";
 import { fmtDate } from "@/lib/format";
 import { THREADS } from "@/lib/threads";
@@ -32,6 +32,13 @@ export function Explorer({ tapes, title, lede }: { tapes: Tape[]; title: string;
   const [kind, setKind] = useState<"all" | "main" | "short">("all");
   const [thread, setThread] = useState("all");
   const [sort, setSort] = useState<"release" | "world">("release");
+  const sumRef = useRef<HTMLParagraphElement>(null);
+
+  // A revealed spoiler goes back to blurred when another tape is loaded. (This used to be done by giving the
+  // paragraph a key so it remounted, but the old paragraphs were never removed and piled up on every change.)
+  useEffect(() => {
+    sumRef.current?.classList.remove("rev");
+  }, [sel]);
 
   // Other parts of the page (case files) can ask the explorer to load a tape.
   useEffect(() => {
@@ -141,7 +148,7 @@ export function Explorer({ tapes, title, lede }: { tapes: Tape[]; title: string;
           </div>
         </div>
         <div className="runbar" title={`Runtime compared with the longest tape (${maxS} seconds)`}><i style={{ width: `${((cur.seconds / maxS) * 100).toFixed(1)}%` }} /></div>
-        <p className="sum spoil" key={cur.id}>{cur.summary}</p>
+        <p className="sum spoil" ref={sumRef}>{cur.summary}</p>
         {cur.note && <p className="note">{cur.note}</p>}
         <p className="acts">
           {cur.youtubeUrl && <WatchLink className="btn sm watch" href={cur.youtubeUrl} title={cur.title}>Watch the original</WatchLink>}

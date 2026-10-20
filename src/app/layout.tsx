@@ -34,6 +34,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     ["guide", "Field guide", "show_guide"],
     ["files", "Case files", "show_files"],
     ["reading", "Reading it", "show_reading"],
+    ["theories", "Theories", "show_theories"],
     ["outside", "Outside", "show_outside"],
     ["test", "Test", "show_quiz"],
     ["sources", "Sources", "show_sources"],

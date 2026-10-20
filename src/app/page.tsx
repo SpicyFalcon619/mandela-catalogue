@@ -1,4 +1,5 @@
-import { getCards, getCharacters, getGuide, getQuiz, getSettings, getSources, getTapes } from "@/lib/content";
+import Link from "next/link";
+import { getCards, getCharacters, getGuide, getQuiz, getSettings, getSources, getTapes, getTheories, STANDING_LABEL } from "@/lib/content";
 import { getCommentCounts } from "@/lib/comments";
 import { Rich, RichInline } from "@/lib/rich";
 import { Hero } from "@/components/Hero";
@@ -16,7 +17,7 @@ function hms(s: number) {
 }
 
 export default async function Home() {
-  const [s, tapes, premise, themes, mixups, reception, film, guide, characters, quiz, sources, commentCounts] = await Promise.all([
+  const [s, tapes, premise, themes, mixups, reception, film, guide, characters, quiz, sources, commentCounts, theories] = await Promise.all([
     getSettings(),
     getTapes(),
     getCards("premise"),
@@ -29,8 +30,11 @@ export default async function Home() {
     getQuiz(),
     getSources(),
     getCommentCounts(),
+    getTheories(),
   ]);
   const on = (k: string) => s[k] === "1";
+  // Client components get the tapes without the long explanations; those are read on each tape's own page.
+  const lite = tapes.map((t) => ({ ...t, detail: "" }));
   const years = tapes.length ? [...new Set(tapes.map((t) => t.releaseDate.slice(0, 4)))] : [];
   const stats = {
     mains: tapes.filter((t) => t.isMain).length,
@@ -62,7 +66,7 @@ export default async function Home() {
 
       {on("show_tapes") && (
         <section id="tapes">
-          <Explorer tapes={tapes} title={s.tapes_title} lede={s.tapes_lede} commentCounts={commentCounts} />
+          <Explorer tapes={lite} title={s.tapes_title} lede={s.tapes_lede} commentCounts={commentCounts} />
         </section>
       )}
 
@@ -79,7 +83,7 @@ export default async function Home() {
           <div className="kicker">Case files</div>
           <h2>{s.files_title}</h2>
           <p className="lede">{s.files_lede}</p>
-          <Cases characters={characters} tapes={tapes} />
+          <Cases characters={characters} tapes={lite} />
         </section>
       )}
 
@@ -118,6 +122,27 @@ export default async function Home() {
               </div>
             </>
           )}
+        </section>
+      )}
+
+      {on("show_theories") && theories.length > 0 && (
+        <section id="theories">
+          <div className="kicker">Fan theories</div>
+          <h2>{s.theories_title}</h2>
+          <p className="lede">{s.theories_lede}</p>
+          <div className="theory-grid">
+            {theories.map((t) => (
+              <Link key={t.id} href={`/theories/${t.id}`} className="theory-card">
+                <span className="theory-tags">
+                  <span className="tag">Unconfirmed</span>
+                  <span className={`tag standing-${t.standing}`}>{STANDING_LABEL[t.standing]}</span>
+                </span>
+                <h3>{t.title}</h3>
+                <p className="spoil">{t.claim}</p>
+                <span className="theory-more">Read the case ▶</span>
+              </Link>
+            ))}
+          </div>
         </section>
       )}
 

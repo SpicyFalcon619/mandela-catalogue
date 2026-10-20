@@ -155,6 +155,7 @@ export function Explorer({ tapes, title, lede, commentCounts = {} }: { tapes: Ta
             {cur.note && <p className="note">{cur.note}</p>}
             <p className="acts">
               {cur.youtubeUrl && <WatchLink className="btn sm watch" href={cur.youtubeUrl} title={cur.title}>Watch the original</WatchLink>}
+              {cur.hasDetail && <Link className="btn sm" href={`/tapes/${cur.id}#detail`}>Full explanation</Link>}
               <Link className="btn sm" href={`/tapes/${cur.id}`}>Open this tape&apos;s page: notes, theories, comments{commentCounts[cur.id] ? ` (${commentCounts[cur.id]})` : ""}</Link>
             </p>
           </div>

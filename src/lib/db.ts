@@ -2,7 +2,7 @@ import type { Client } from "@libsql/client";
 import bcrypt from "bcryptjs";
 import fs from "node:fs";
 import path from "node:path";
-import { backfillYoutubeChannels, backfillYoutubeLinks, seedIfEmpty } from "./seed";
+import { backfillContentExpansion, backfillTapeDetails, backfillYoutubeChannels, backfillYoutubeLinks, seedIfEmpty } from "./seed";
 
 /**
  * Database access. Everything is async so the same code runs on two drivers:
@@ -47,6 +47,20 @@ CREATE TABLE IF NOT EXISTS tapes (
   note TEXT NOT NULL DEFAULT '',
   youtube_url TEXT NOT NULL DEFAULT '',
   youtube_channel TEXT NOT NULL DEFAULT '',
+  detail TEXT NOT NULL DEFAULT '',
+  published INTEGER NOT NULL DEFAULT 1
+);
+CREATE TABLE IF NOT EXISTS theories (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  standing TEXT NOT NULL DEFAULT 'open',
+  claim TEXT NOT NULL DEFAULT '',
+  body TEXT NOT NULL DEFAULT '',
+  support TEXT NOT NULL DEFAULT '',
+  against TEXT NOT NULL DEFAULT '',
+  source TEXT NOT NULL DEFAULT '',
+  tape_ids TEXT NOT NULL DEFAULT '[]',
+  sort INTEGER NOT NULL DEFAULT 0,
   published INTEGER NOT NULL DEFAULT 1
 );
 CREATE TABLE IF NOT EXISTS characters (
@@ -229,6 +243,10 @@ export const sql = {
 async function migrate(d: Db) {
   if (await addColumn(d, "tapes", "youtube_url", "TEXT NOT NULL DEFAULT ''")) await backfillYoutubeLinks(d);
   if (await addColumn(d, "tapes", "youtube_channel", "TEXT NOT NULL DEFAULT ''")) await backfillYoutubeChannels(d);
+
+  // Long tape explanations and premade theories (the theories table itself is created by SCHEMA).
+  if (await addColumn(d, "tapes", "detail", "TEXT NOT NULL DEFAULT ''")) await backfillTapeDetails(d);
+  await backfillContentExpansion(d);
 
   // Comment threads, votes and moderation (added for the discussion upgrade).
   await addColumn(d, "comments", "parent_id", "INTEGER");

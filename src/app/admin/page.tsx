@@ -37,7 +37,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
       </div>
       <div className="sgroup">
         <h2>Reset content</h2>
-        <p className="intro">Deletes all tapes, case files, quiz questions, sources, guide tabs, cards, site settings and comments, then reloads the original data. Accounts are kept. This cannot be undone.</p>
+        <p className="intro">Deletes all tapes (with their explanations), theories, case files, quiz questions, sources, guide tabs, cards, site settings and comments, then reloads the original data. Accounts are kept. This cannot be undone.</p>
         <form action={resetAllContent} className="form">
           <label>
             Type RESET to confirm

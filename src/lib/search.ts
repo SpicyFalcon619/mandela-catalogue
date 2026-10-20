@@ -35,12 +35,30 @@ export async function searchSite(q: string, s: Settings): Promise<Group[]> {
 
   groups.push(
     sql
-      .all<{ id: number; title: string; summary: string; note: string; inworld_label: string }>(
-        `SELECT id, title, summary, note, inworld_label FROM tapes WHERE published = 1 AND (title ${LIKE} OR summary ${LIKE} OR note ${LIKE}) ORDER BY release_date, id LIMIT ${lim}`,
-        ...n(3),
+      .all<{ id: number; title: string; summary: string; note: string; detail: string }>(
+        `SELECT id, title, summary, note, detail FROM tapes WHERE published = 1 AND (title ${LIKE} OR summary ${LIKE} OR note ${LIKE} OR detail ${LIKE}) ORDER BY release_date, id LIMIT ${lim}`,
+        ...n(4),
       )
-      .then((rows) => ({ id: "tapes", label: "Tapes", hits: rows.map((r) => ({ title: r.title, href: `/tapes/${r.id}`, snippet: snippet([r.title, r.summary, r.note], q) })) })),
+      .then((rows) => ({
+        id: "tapes",
+        label: "Tapes",
+        hits: rows.map((r) => ({ title: r.title, href: `/tapes/${r.id}`, snippet: snippet([r.title, r.summary, r.note, r.detail], q) })),
+      })),
   );
+  if (on("show_theories")) {
+    groups.push(
+      sql
+        .all<{ id: number; title: string; claim: string; body: string; support: string; against: string }>(
+          `SELECT id, title, claim, body, support, against FROM theories WHERE published = 1 AND (title ${LIKE} OR claim ${LIKE} OR body ${LIKE} OR support ${LIKE} OR against ${LIKE}) ORDER BY sort, id LIMIT ${lim}`,
+          ...n(5),
+        )
+        .then((rows) => ({
+          id: "theories",
+          label: "Fan theories (unconfirmed)",
+          hits: rows.map((r) => ({ title: r.title, href: `/theories/${r.id}`, snippet: snippet([r.title, r.claim, r.body, r.support, r.against], q) })),
+        })),
+    );
+  }
   if (on("show_files")) {
     groups.push(
       sql

@@ -36,13 +36,14 @@ describe("seed content matches its sources", () => {
     expect(vol6.confidence).toBe("stated");
   });
 
-  it("does not define M.A.D. or the T.H.I.N.K. Principle beyond the sources (project rule)", async () => {
-    const all = JSON.stringify(await Promise.all([getGuide(), getCards("premise"), getCards("theme"), getCards("mixup"), getCharacters()]));
-    expect(all).not.toMatch(/Metaphysical/i);
+  it("defines M.A.D. and the T.H.I.N.K. Principle only as the series' own restored Vol. 1 does (project rule)", async () => {
     const vocab = (await getGuide()).find((g) => g.label === "Vocabulary")!.body;
-    expect(vocab).toMatch(/M\.A\.D\.[^\n]*does not say what the letters stand for/);
-    expect(vocab).toMatch(/T\.H\.I\.N\.K\. Principle:\*\* the title of a segment in Vol\. 1/);
-    expect(vocab).toMatch(/My sources do not say what it means/);
+    expect(vocab).toMatch(/M\.A\.D\. \(Metaphysical Awareness Disorder\):\*\* explained inside the series, in the restored \*Vol\. 1\*/);
+    expect(vocab).toContain("exposure to verbal information that is not desired to be known");
+    expect(vocab).toContain("Tell an authority figure, Hinder the Alternate's movements, Identify the threat level, Neutralize it if it is safe, Know your place");
+    // The short copy elsewhere must not make up a meaning for the acronyms.
+    const short = JSON.stringify(await Promise.all([getCards("premise"), getCards("theme"), getCards("mixup"), getCharacters()]));
+    expect(short).not.toMatch(/Metaphysical/i);
   });
 
   it("marks inferred dates of death as inferred", async () => {

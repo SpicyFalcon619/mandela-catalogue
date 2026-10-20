@@ -19,6 +19,10 @@ export type Tape = {
   threads: string[];
   summary: string;
   note: string;
+  /** Long explanation in the rich text format (headings, lists). Empty when none has been written. */
+  detail: string;
+  /** True when `detail` has text. The home page sends tapes to client components without the long text, only this flag. */
+  hasDetail: boolean;
   /** Validated https YouTube link, or empty. */
   youtubeUrl: string;
   /** The 11-character id of that video, or empty. Used for the click-to-play embed. */
@@ -31,6 +35,12 @@ export type QuizQ = { id: number; question: string; options: string[]; answer: n
 export type Source = { id: number; title: string; url: string; note: string };
 export type GuideTab = { id: number; label: string; body: string; asideTitle: string; asideBody: string; widget: string };
 export type Card = { id: number; kind: string; title: string; body: string };
+export type TheoryStanding = "likely" | "open" | "doubtful";
+export const STANDING_LABEL: Record<TheoryStanding, string> = { likely: "Likely", open: "Open", doubtful: "Doubtful" };
+export type Theory = {
+  id: number; title: string; standing: TheoryStanding; claim: string; body: string; support: string; against: string;
+  source: string; tapeIds: number[];
+};
 export type Settings = Record<string, string>;
 
 export { THREADS } from "./threads";
@@ -57,7 +67,7 @@ export const getSettings = cache(async (): Promise<Settings> => {
 
 type TapeRow = {
   id: number; title: string; release_date: string; runtime: string; is_main: number; inworld_label: string;
-  inworld_sort: number | null; confidence: string; threads: string; summary: string; note: string; youtube_url: string; youtube_channel: string; published: number;
+  inworld_sort: number | null; confidence: string; threads: string; summary: string; note: string; detail: string; youtube_url: string; youtube_channel: string; published: number;
 };
 function mapTape(r: TapeRow, number: number): Tape {
   return {
@@ -74,6 +84,8 @@ function mapTape(r: TapeRow, number: number): Tape {
     threads: parseJson<string[]>(r.threads, []),
     summary: r.summary,
     note: r.note,
+    detail: r.detail ?? "",
+    hasDetail: !!(r.detail ?? "").trim(),
     youtubeUrl: youtubeHref(r.youtube_url),
     youtubeId: youtubeId(r.youtube_url),
     youtubeChannel: (r.youtube_channel ?? "").trim(),
@@ -97,6 +109,20 @@ export async function getCharacters(): Promise<Character[]> {
     id: r.id, name: r.name, actor: r.actor, bio: r.bio, status: r.status,
     statusHidden: !!r.status_hidden, tapeIds: parseJson<number[]>(r.tape_ids, []),
   }));
+}
+type TheoryRow = {
+  id: number; title: string; standing: string; claim: string; body: string; support: string; against: string; source: string; tape_ids: string;
+};
+const mapTheory = (r: TheoryRow): Theory => ({
+  id: r.id, title: r.title, standing: (r.standing in STANDING_LABEL ? r.standing : "open") as TheoryStanding, claim: r.claim, body: r.body,
+  support: r.support, against: r.against, source: r.source, tapeIds: parseJson<number[]>(r.tape_ids, []),
+});
+export async function getTheories(): Promise<Theory[]> {
+  return (await sql.all<TheoryRow>("SELECT * FROM theories WHERE published = 1 ORDER BY sort, id")).map(mapTheory);
+}
+export async function getTheory(id: number): Promise<Theory | null> {
+  const r = await sql.get<TheoryRow>("SELECT * FROM theories WHERE id = ? AND published = 1", id);
+  return r ? mapTheory(r) : null;
 }
 export async function getQuiz(): Promise<QuizQ[]> {
   const rows = await sql.all<{

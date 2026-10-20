@@ -203,7 +203,7 @@ test.describe("admin area", () => {
   test("every admin page loads", async ({ browser }) => {
     const { ctx, page } = await asAdmin(browser);
     const paths = ["/admin", "/admin/moderation", "/admin/settings", "/admin/users"];
-    for (const e of ["tapes", "characters", "quiz", "sources", "guide", "cards"]) paths.push(`/admin/${e}`, `/admin/${e}/new`);
+    for (const e of ["tapes", "characters", "quiz", "sources", "guide", "cards", "theories"]) paths.push(`/admin/${e}`, `/admin/${e}/new`);
     for (const p of paths) {
       const res = await page.goto(p);
       expect(res?.status(), p).toBe(200);
@@ -451,7 +451,7 @@ test.describe("original footage", () => {
 });
 
 test.describe("site shell: navigation bar, footer and helpers", () => {
-  const SECTIONS = ["Premise", "Tapes", "Field guide", "Case files", "Reading it", "Outside", "Test", "Sources"];
+  const SECTIONS = ["Premise", "Tapes", "Field guide", "Case files", "Reading it", "Theories", "Outside", "Test", "Sources"];
 
   test("on a wide screen the bar is one tidy row with every section and no clutter", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });

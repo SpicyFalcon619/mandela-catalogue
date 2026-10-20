@@ -18,6 +18,9 @@ export const DEFAULT_SETTINGS: Record<string, string> = {
   files_title: "The people on the tapes",
   files_lede:
     "Names are the characters; the line under each is the voice actor as credited on Wikipedia. The buttons jump to the tapes each person appears in.",
+  theories_title: "Fan theories, premade",
+  theories_lede:
+    "Ideas fans have built from the tapes, collected with what supports each one and what argues against it. Every one is unconfirmed: the series states none of them. They are spoilers, so the details stay blurred until you click.",
   reading_title: "What it seems to be about",
   reading_lede: "These readings are mine, built from the plot above. The series doesn't state them.",
   mixups_title: "Common mix-ups",
@@ -33,7 +36,7 @@ export const DEFAULT_SETTINGS: Record<string, string> = {
     "Where to see the real footage and read more. This site hosts no frames, clips or character art from the series: the videos play from YouTube's own player and everything else links to the originals.",
   method_title: "How reliable is this site?",
   method_note:
-    "Episode data comes from the Wikipedia article; titles, release dates and runtimes were last checked against its source text on October 20, 2026. In-world dates marked inferred are interpretations of that summary and the episode titles, not stated facts. Wikipedia's summary uses M.A.D. and the T.H.I.N.K. Principle without defining them, so the glossary says so. Plot summaries describe fiction and may contain mistakes, so check them against the tapes.",
+    "Episode data comes from the Wikipedia article; titles, release dates and runtimes were last checked against its source text on October 20, 2026. The longer tape explanations and the theories are adapted from the series fan wiki and re-worded; anything the series does not state is labelled as a reading or an unconfirmed theory. In-world dates marked inferred are interpretations of the episodes and their titles, not stated facts. Plot summaries describe fiction and may contain mistakes, so check them against the tapes.",
   content_note:
     "Content note: the series deals with suicide, child abduction and grief. If any of that is close to home, talking to someone you trust, or a local support line, can help.",
   credit_line:
@@ -47,6 +50,7 @@ export const DEFAULT_SETTINGS: Record<string, string> = {
   show_guide: "1",
   show_files: "1",
   show_reading: "1",
+  show_theories: "1",
   show_outside: "1",
   show_quiz: "1",
   show_sources: "1",
@@ -73,6 +77,8 @@ export const SETTING_FIELDS: { key: string; label: string; kind: "text" | "texta
   { key: "guide_title", label: "Field guide heading", kind: "text", group: "Section text" },
   { key: "files_title", label: "Case files heading", kind: "text", group: "Section text" },
   { key: "files_lede", label: "Case files intro", kind: "textarea", group: "Section text" },
+  { key: "theories_title", label: "Theories heading", kind: "text", group: "Section text" },
+  { key: "theories_lede", label: "Theories intro", kind: "textarea", group: "Section text" },
   { key: "reading_title", label: "Reading heading", kind: "text", group: "Section text" },
   { key: "reading_lede", label: "Reading intro", kind: "textarea", group: "Section text" },
   { key: "mixups_title", label: "Mix-ups heading", kind: "text", group: "Section text" },
@@ -93,6 +99,7 @@ export const SETTING_FIELDS: { key: string; label: string; kind: "text" | "texta
   { key: "show_guide", label: "Show field guide", kind: "bool", group: "Sections" },
   { key: "show_files", label: "Show case files", kind: "bool", group: "Sections" },
   { key: "show_reading", label: "Show reading + mix-ups", kind: "bool", group: "Sections" },
+  { key: "show_theories", label: "Show fan theories", kind: "bool", group: "Sections" },
   { key: "show_outside", label: "Show film, fans and critics", kind: "bool", group: "Sections" },
   { key: "show_quiz", label: "Show quiz", kind: "bool", group: "Sections" },
   { key: "show_sources", label: "Show sources", kind: "bool", group: "Sections" },

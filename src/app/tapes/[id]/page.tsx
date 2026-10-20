@@ -7,7 +7,8 @@ import { Stills } from "@/components/Stills";
 import { VideoEmbed } from "@/components/VideoEmbed";
 import { WatchLink } from "@/components/WatchLink";
 import { getUser } from "@/lib/auth";
-import { getCharacters, getSettings, getTape, getTapes } from "@/lib/content";
+import { getCharacters, getSettings, getTape, getTapes, getTheories } from "@/lib/content";
+import { Rich } from "@/lib/rich";
 import { getThread } from "@/lib/comments";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +26,8 @@ export default async function TapePage({ params }: { params: Promise<{ id: strin
   const i = tapes.findIndex((t) => t.id === tape.id);
   const prev = tapes[i - 1], next = tapes[i + 1];
   const user = await getUser();
-  const [s, characters, thread] = await Promise.all([getSettings(), getCharacters(), getThread(tape.id, user)]);
+  const [s, characters, thread, theories] = await Promise.all([getSettings(), getCharacters(), getThread(tape.id, user), getTheories()]);
+  const related = theories.filter((t) => t.tapeIds.includes(tape.id));
   const people = characters.filter((c) => c.tapeIds.includes(tape.id));
   const pad = (n: number) => String(n).padStart(2, "0");
   const here = `/tapes/${tape.id}`;
@@ -44,6 +46,25 @@ export default async function TapePage({ params }: { params: Promise<{ id: strin
             <p className="acts">
               <WatchLink className="btn watch" href={tape.youtubeUrl} title={tape.title}>Watch the original on YouTube</WatchLink>
             </p>
+          )}
+          {tape.detail && (
+            <section className="detail" id="detail" aria-labelledby="detail-h">
+              <div className="kicker">In depth</div>
+              <h2 id="detail-h">The full explanation</h2>
+              <p className="mute spoil-hint">What happens, who is in it, where it fits, what it settles and what it leaves open. It gives away the whole tape, so it stays blurred until you click it.</p>
+              <div className="detail-body spoil"><Rich text={tape.detail} /></div>
+            </section>
+          )}
+          {related.length > 0 && (
+            <section className="detail" id="theories" aria-labelledby="theories-h">
+              <div className="kicker">Fan theories · unconfirmed</div>
+              <h2 id="theories-h">Theories about this tape</h2>
+              <ul className="theory-links">
+                {related.map((t) => (
+                  <li key={t.id}><Link href={`/theories/${t.id}`}>{t.title}</Link></li>
+                ))}
+              </ul>
+            </section>
           )}
           <Stills tapeId={tape.id} label={`TAPE ${pad(tape.number)}`} />
         </div>

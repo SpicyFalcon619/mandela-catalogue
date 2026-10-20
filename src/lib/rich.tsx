@@ -2,7 +2,7 @@ import React from "react";
 
 /**
  * A tiny, safe text format for admin-written content.
- * Blank line = new paragraph. Lines starting with "- " make a list.
+ * Blank line = new paragraph. Lines starting with "- " make a list, "1. " a numbered list, "## " a heading.
  * Inline: **bold**, *italic*, [label](https://link). Everything else is escaped by React.
  */
 const INLINE = /(\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\(https?:\/\/[^)\s]+\))/g;
@@ -32,10 +32,24 @@ export function Rich({ text }: { text: string }) {
   return (
     <>
       {blocks.map((b, i) => {
-        const lines = b.split("\n").map((l) => l.trimEnd());
-        if (lines.every((l) => l.startsWith("- "))) {
-          return (
-            <ul key={i}>
+        const all = b.split("\n").map((l) => l.trimEnd());
+        // A heading line may sit directly above the text it introduces.
+        const head = all[0].startsWith("## ") ? all[0].slice(3).trim() : null;
+        const lines = head === null ? all : all.slice(1);
+        let body: React.ReactNode = null;
+        if (lines.length && lines.every((l) => /^\d+\. /.test(l))) {
+          body = (
+            <ol>
+              {lines.map((l, j) => (
+                <li key={j}>
+                  <RichInline text={l.replace(/^\d+\. /, "")} />
+                </li>
+              ))}
+            </ol>
+          );
+        } else if (lines.length && lines.every((l) => l.startsWith("- "))) {
+          body = (
+            <ul>
               {lines.map((l, j) => (
                 <li key={j}>
                   <RichInline text={l.slice(2)} />
@@ -43,11 +57,18 @@ export function Rich({ text }: { text: string }) {
               ))}
             </ul>
           );
+        } else if (lines.length) {
+          body = (
+            <p>
+              <RichInline text={lines.join(" ")} />
+            </p>
+          );
         }
         return (
-          <p key={i}>
-            <RichInline text={lines.join(" ")} />
-          </p>
+          <React.Fragment key={i}>
+            {head !== null && <h3 className="rh">{head}</h3>}
+            {body}
+          </React.Fragment>
         );
       })}
     </>

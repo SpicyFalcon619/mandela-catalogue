@@ -1,10 +1,33 @@
 import type { Db, Stmt } from "./db";
 import { DEFAULT_SETTINGS } from "./defaults";
 import data from "./seed-data.json";
+import { TAPE_DETAILS } from "./seed-details";
+import { THEORIES, type SeedTheory } from "./seed-theories";
 
 type RawTape = { id: number; yt: string; ytc: string; t: string; d: string; len: string; main: boolean; iw: string; iws: number | null; c: string; th: string[]; s: string; n: string };
 type RawCase = { n: string; a: string; p: string; ap: number[]; st: string };
 type RawQ = { q: string; o: string[]; a: number; n: string };
+
+/** The Vocabulary tab as first published. A database that still has exactly this text is moved to the new wording. */
+const OLD_VOCAB_BODY = `- **M.A.D.:** named in *Cognitohazard*, where a forum user tries to cause it in another, and in Wikipedia's entry for Mark Heathcliff, where it drives him to suicide. Wikipedia does not say what the letters stand for, and neither does this guide.
+- **Cognitohazard:** a general fiction term for information that harms you by being perceived. Also the title of a 2025 installment.
+- **T.H.I.N.K. Principle:** the title of a segment in Vol. 1. Wikipedia says the Alternate N appeared in it before attacking Jude in Vol. 5. My sources do not say what it means.
+- **Flawed / Complete / Overdriven:** the three assimilation types named on a USDTP tape in *interlude*.
+- **Beginner's Bible:** the in-universe children's video series the Bible retellings imitate.
+- **GENESIS APOCRYPHON:** an affiliated channel that hosts short clips such as the Easter clips and *1_19_09 221a*.
+- **MandelaTECH:** the county company where Dave Lee is a manager. Its closing-down ad opens *Presto*.
+- **Bythorne Paranormal Society:** the investigation group Adam, Jonah and Sarah belong to.`;
+
+const NEW_VOCAB_BODY = `- **M.A.D. (Metaphysical Awareness Disorder):** explained inside the series, in the restored *Vol. 1*, as a severe mental illness caused by "exposure to verbal information that is not desired to be known". The tape says 97% of people diagnosed take their own lives. *Cognitohazard* shows it being spread over a forum, and Wikipedia's entry for Mark Heathcliff names it as what drives him to suicide.
+- **Cognitohazard:** a general fiction term for information that harms you by being perceived. Also the title of a 2025 installment.
+- **T.H.I.N.K. Principle:** the safety rule taught in *Vol. 1*: Tell an authority figure, Hinder the Alternate's movements, Identify the threat level, Neutralize it if it is safe, Know your place (the words "in reality" are struck through on screen). Wikipedia says the Alternate N appeared in the original segment before attacking Jude in Vol. 5.
+- **USDTP:** the United States Department of Temporal Phenomena, the agency behind the Alternate broadcasts and the Television and Mirror Destruction Order.
+- **Flawed / Complete / Overdriven:** the three assimilation types named on a USDTP tape in *interlude*. The fan wiki groups Complete with the near-perfect copies (type one) and Flawed and Overdriven with the broken-looking ones (type three).
+- **Tulpa:** a fan wiki term for an Alternate imagined into being, as through Stanley's program in *Vol. 333*. The tapes do not use the word.
+- **Beginner's Bible:** the in-universe children's video series the Bible retellings imitate.
+- **GENESIS APOCRYPHON:** an affiliated channel that hosts short clips such as the Easter clips and *1_19_09 221a*.
+- **MandelaTECH:** the county company where Dave Lee is a manager. Its closing-down ad opens *Presto*.
+- **Bythorne Paranormal Society:** the investigation group Adam, Jonah and Sarah belong to.`;
 
 const GUIDE = [
   {
@@ -48,14 +71,7 @@ const GUIDE = [
   {
     label: "Vocabulary",
     widget: "none",
-    body: `- **M.A.D.:** named in *Cognitohazard*, where a forum user tries to cause it in another, and in Wikipedia's entry for Mark Heathcliff, where it drives him to suicide. Wikipedia does not say what the letters stand for, and neither does this guide.
-- **Cognitohazard:** a general fiction term for information that harms you by being perceived. Also the title of a 2025 installment.
-- **T.H.I.N.K. Principle:** the title of a segment in Vol. 1. Wikipedia says the Alternate N appeared in it before attacking Jude in Vol. 5. My sources do not say what it means.
-- **Flawed / Complete / Overdriven:** the three assimilation types named on a USDTP tape in *interlude*.
-- **Beginner's Bible:** the in-universe children's video series the Bible retellings imitate.
-- **GENESIS APOCRYPHON:** an affiliated channel that hosts short clips such as the Easter clips and *1_19_09 221a*.
-- **MandelaTECH:** the county company where Dave Lee is a manager. Its closing-down ad opens *Presto*.
-- **Bythorne Paranormal Society:** the investigation group Adam, Jonah and Sarah belong to.`,
+    body: NEW_VOCAB_BODY,
     aside_title: "",
     aside_body: "",
   },
@@ -82,19 +98,36 @@ const CARDS: { kind: string; title: string; body: string }[] = [
   { kind: "film", title: "September 2026", body: "Release date set for June 9, 2028." },
 ];
 
-const SOURCES = [
+const OLD_WIKI_NOTE = "Fan wiki with episode pages. Pages did not load when this site was built, so nothing relies on them.";
+const NEW_WIKI_NOTE = "Fan wiki with a page for every video, character and idea. The long tape explanations and the theories on this site are adapted from it and re-worded. Its text is available under CC BY-SA 3.0.";
+
+const wiki = (page: string) => `https://mandela-catalogue.fandom.com/wiki/${page}`;
+/** Fan wiki pages the tape explanations and theories lean on, added to existing databases once. */
+const EXTRA_SOURCES: [string, string, string][] = [
+  ["Canonical System — Fandom wiki", wiki("Canonical_System"), "Which videos count as canon, and which were retired or replaced."],
+  ["Sleeper Alternate — Fandom wiki", wiki("Sleeper_Alternate"), "The fan wiki's reading of Adam Murray as a replacement. A theory page, not a statement by the creator."],
+  ["Tulpa and The Might of the Subconscious — Fandom wiki", wiki("The_Might_of_the_Subconscious"), "Stanley's program from Vol. 333 and how the wiki classifies what it makes."],
+  ["The Preacher — Fandom wiki", wiki("Preacher"), "Appearances of the Preacher and the wiki's speculation about who she was."],
+  ["Face Studio 2 — Fandom wiki", wiki("Face_Studio_2"), "The MandelaTECH software from Vol. 4."],
+  ["Operation Census — Fandom wiki", wiki("Operation_Census"), "The USDTP operation described on the private tape in Vol. 5."],
+];
+
+const SOURCES: [string, string, string][] = [
   ["The Mandela Catalogue — official YouTube playlist", "https://www.youtube.com/playlist?list=PLkk6ZuwrqcsG1CFuI_kjfOVPunfuJEHwj", "The original videos, in order. This is the channel link on Wikipedia's page; the per-tape links on this site point into it."],
   ["The Mandela Catalogue — Wikipedia", "https://en.wikipedia.org/wiki/The_Mandela_Catalogue", "Main source for episode dates, lengths, plot summaries, cast, reception and the film."],
-  ["The Mandela Catalogue Wiki (Fandom)", "https://mandela-catalogue.fandom.com/wiki/The_Mandela_Catalogue", "Fan wiki with episode pages. Pages did not load when this site was built, so nothing relies on them."],
+  ["The Mandela Catalogue Wiki (Fandom)", "https://mandela-catalogue.fandom.com/wiki/The_Mandela_Catalogue", NEW_WIKI_NOTE],
   ["Alternates — Fandom wiki", "https://mandela-catalogue.fandom.com/wiki/Alternates", "Creature entries and screenshots."],
   ["Adam Murray — Fandom wiki", "https://mandela-catalogue.fandom.com/wiki/Adam_Murray", "Character page with stills."],
   ["Vol. 6 — Fandom wiki", "https://mandela-catalogue.fandom.com/wiki/The_Mandela_Catalogue_Vol._6", "Page for the latest main volume."],
   ["Vol. 6 — IMDb", "https://www.imdb.com/title/tt39046256/", "Listing with stills."],
   ["overthrone — IMDb Pro", "https://pro.imdb.com/title/tt18829658", "Listing for the first video."],
+  ...EXTRA_SOURCES,
   ["Mandela Catalogue — TV Tropes", "https://tvtropes.org/pmwiki/pmwiki.php/WebVideo/MandelaCatalogue", "Tropes page; a separate recap page exists."],
   ["The Mandela Catalogue — TheTVDB", "https://thetvdb.com/series/the-mandela-catalogue/allseasons/official", "Episode listing in aired order."],
   ["The Mandela Catalogue — NamuWiki", "https://en.namu.wiki/w/The%20Mandela%20Catalogue", "Long fan-written entry with an episode list."],
 ];
+
+const OLD_METHOD_NOTE = "Episode data comes from the Wikipedia article; titles, release dates and runtimes were last checked against its source text on October 20, 2026. In-world dates marked inferred are interpretations of that summary and the episode titles, not stated facts. Wikipedia's summary uses M.A.D. and the T.H.I.N.K. Principle without defining them, so the glossary says so. Plot summaries describe fiction and may contain mistakes, so check them against the tapes.";
 
 /** Fills the content tables once, on an empty database. Never touches users or comments. */
 export async function seedIfEmpty(d: Db) {
@@ -138,10 +171,64 @@ export async function backfillYoutubeChannels(d: Db) {
   );
 }
 
+/** Adds the long explanations to tapes seeded before the column existed. Matches on id and title; never overwrites text. */
+export async function backfillTapeDetails(d: Db) {
+  await d.batch(
+    (data.TAPES as RawTape[])
+      .filter((x) => TAPE_DETAILS[x.id])
+      .map((x) => ({
+        sql: "UPDATE tapes SET detail = ? WHERE id = ? AND title = ? AND detail = ''",
+        args: [TAPE_DETAILS[x.id], x.id, x.t],
+      })),
+  );
+}
+
+const EXPANSION_MARKER = "content_expansion_v1";
+
+const theoryArgs = (x: SeedTheory, i: number) => [x.title, x.standing, x.claim, x.body, x.support, x.against, x.source, JSON.stringify(x.tapes), i];
+const THEORY_COLS = "title, standing, claim, body, support, against, source, tape_ids, sort";
+
+/**
+ * Brings an existing database up to the content added with the theories: the premade theories, the new sources, the
+ * Cognitohazard story date and the reworded glossary. Runs once (the marker row), and only on a database that already
+ * has tapes: a new database gets all of it from contentStatements(). Text is replaced only where it still equals the old
+ * default, so anything an admin edited is left alone. The inserts check the marker inside the same transaction, so two
+ * starts racing cannot add things twice.
+ */
+export async function backfillContentExpansion(d: Db) {
+  const [{ n }, done] = await Promise.all([
+    d.get<{ n: number }>("SELECT COUNT(*) AS n FROM tapes").then((r) => r ?? { n: 0 }),
+    d.get("SELECT 1 AS x FROM settings WHERE key = ?", EXPANSION_MARKER),
+  ]);
+  if (n === 0 || done) return;
+  const unmarked = `WHERE NOT EXISTS (SELECT 1 FROM settings WHERE key = '${EXPANSION_MARKER}')`;
+  const stmts: Stmt[] = [];
+  THEORIES.forEach((x, i) =>
+    stmts.push({ sql: `INSERT INTO theories (${THEORY_COLS}) SELECT ?,?,?,?,?,?,?,?,? ${unmarked}`, args: theoryArgs(x, i) }),
+  );
+  EXTRA_SOURCES.forEach((x, i) =>
+    stmts.push({
+      sql: `INSERT INTO sources (title, url, note, sort) SELECT ?,?,?,? ${unmarked} AND NOT EXISTS (SELECT 1 FROM sources WHERE url = ?)`,
+      args: [x[0], x[1], x[2], SOURCES.length + i, x[1]],
+    }),
+  );
+  stmts.push(
+    { sql: "UPDATE guide SET body = ? WHERE label = 'Vocabulary' AND body = ?", args: [NEW_VOCAB_BODY, OLD_VOCAB_BODY] },
+    { sql: "UPDATE sources SET note = ? WHERE url = ? AND note = ?", args: [NEW_WIKI_NOTE, wiki("The_Mandela_Catalogue"), OLD_WIKI_NOTE] },
+    { sql: "UPDATE settings SET value = ? WHERE key = 'method_note' AND value = ?", args: [DEFAULT_SETTINGS.method_note, OLD_METHOD_NOTE] },
+    {
+      sql: "UPDATE tapes SET inworld_label = ?, inworld_sort = 2011, confidence = 'stated' WHERE id = 18 AND title = 'Cognitohazard' AND inworld_label = 'Undated'",
+      args: ["April 2011 (from the chat dates)"],
+    },
+    { sql: "INSERT OR IGNORE INTO settings (key, value) VALUES (?, '1')", args: [EXPANSION_MARKER] },
+  );
+  await d.batch(stmts);
+}
+
 /** Wipes content (not users) and loads the original data again, as one transaction. */
 export async function resetContent(d: Db) {
-  const wipe: Stmt[] = ["comments", "tapes", "characters", "quiz", "sources", "guide", "cards"].map((t) => ({ sql: `DELETE FROM ${t}` }));
-  wipe.push({ sql: "DELETE FROM sqlite_sequence WHERE name IN ('comments','tapes','characters','quiz','sources','guide','cards')" });
+  const wipe: Stmt[] = ["comments", "tapes", "characters", "quiz", "sources", "guide", "cards", "theories"].map((t) => ({ sql: `DELETE FROM ${t}` }));
+  wipe.push({ sql: "DELETE FROM sqlite_sequence WHERE name IN ('comments','tapes','characters','quiz','sources','guide','cards','theories')" });
   wipe.push({ sql: "DELETE FROM settings" });
   const settings = Object.entries(DEFAULT_SETTINGS).map(([k, v]) => settingStmt(k, v));
   await d.batch([...wipe, ...settings, ...contentStatements()]);
@@ -156,8 +243,8 @@ function contentStatements(): Stmt[] {
   const out: Stmt[] = [];
   for (const x of tapes) {
     out.push({
-      sql: "INSERT INTO tapes (id, title, release_date, runtime, is_main, inworld_label, inworld_sort, confidence, threads, summary, note, youtube_url, youtube_channel) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-      args: [x.id, x.t, x.d, x.len, x.main ? 1 : 0, x.iw, x.iws, x.c, JSON.stringify(x.th), x.s, x.n, x.yt, x.ytc],
+      sql: "INSERT INTO tapes (id, title, release_date, runtime, is_main, inworld_label, inworld_sort, confidence, threads, summary, note, youtube_url, youtube_channel, detail) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+      args: [x.id, x.t, x.d, x.len, x.main ? 1 : 0, x.iw, x.iws, x.c, JSON.stringify(x.th), x.s, x.n, x.yt, x.ytc, TAPE_DETAILS[x.id] ?? ""],
     });
   }
   cases.forEach((x, i) => {
@@ -177,5 +264,8 @@ function contentStatements(): Stmt[] {
     }),
   );
   CARDS.forEach((x, i) => out.push({ sql: "INSERT INTO cards (kind, title, body, sort) VALUES (?,?,?,?)", args: [x.kind, x.title, x.body, i] }));
+  THEORIES.forEach((x, i) => out.push({ sql: `INSERT INTO theories (${THEORY_COLS}) VALUES (?,?,?,?,?,?,?,?,?)`, args: theoryArgs(x, i) }));
+  // A new database already has everything in the expansion; the marker keeps the one-time update from running on it.
+  out.push({ sql: "INSERT OR IGNORE INTO settings (key, value) VALUES (?, '1')", args: [EXPANSION_MARKER] });
   return out;
 }

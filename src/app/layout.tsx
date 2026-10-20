@@ -3,6 +3,7 @@ import Link from "next/link";
 import "./globals.css";
 import { getUser } from "@/lib/auth";
 import { getSettings } from "@/lib/content";
+import { countUnreadReplies } from "@/lib/comments";
 import { getPrefs } from "@/lib/prefs-server";
 import { PrefsProvider } from "@/components/PrefsProvider";
 import { TopBar } from "@/components/TopBar";
@@ -25,6 +26,7 @@ const HEX = /^#[0-9a-fA-F]{6}$/;
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const [prefs, user, s] = await Promise.all([getPrefs(), getUser(), getSettings()]);
+  const unread = user ? await countUnreadReplies(user.id) : 0;
   const sections = [
     ["premise", "Premise", "show_premise"],
     ["tapes", "Tapes", "show_tapes"],
@@ -60,7 +62,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <PrefsProvider initial={prefs}>
           <div className="wrap">
-            <TopBar user={user ? { username: user.username, role: user.role } : null} sections={sections} />
+            <TopBar user={user ? { username: user.username, role: user.role } : null} sections={sections} unread={unread} />
             {children}
             <footer>
               <p>{s.content_note}</p>

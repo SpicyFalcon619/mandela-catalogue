@@ -132,13 +132,13 @@ test.describe("posting and moderation", () => {
     await page.getByLabel("Post type").selectOption("comment");
     await page.getByLabel("Your post").fill(comment);
     await page.getByRole("button", { name: "Post", exact: true }).click();
-    await expect(page.getByText("Posted.")).toBeVisible();
+    await expect(page.locator(".cmt-compose .okmsg")).toHaveText("Posted.");
     await expect(page.getByText(comment)).toBeVisible();
 
     await page.getByLabel("Post type").selectOption("theory");
     await page.getByLabel("Your post").fill(theory);
     await page.getByRole("button", { name: "Post", exact: true }).click();
-    await expect(page.getByText(/An admin will review/)).toBeVisible();
+    await expect(page.locator(".cmt-compose .okmsg")).toContainText("An admin will review");
     await page.reload();
     await expect(page.getByText(theory)).toBeVisible(); // the author still sees their own pending post
 

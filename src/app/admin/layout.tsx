@@ -8,7 +8,11 @@ export const metadata = { title: "Admin" };
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   await requireAdmin();
-  const pending = (await sql.get<{ n: number }>("SELECT COUNT(*) AS n FROM comments WHERE status = 'pending'"))?.n ?? 0;
+  const [waiting, reported] = await Promise.all([
+    sql.get<{ n: number }>("SELECT COUNT(*) AS n FROM comments WHERE status = 'pending'"),
+    sql.get<{ n: number }>("SELECT COUNT(DISTINCT comment_id) AS n FROM comment_reports WHERE resolved = 0"),
+  ]);
+  const pending = (waiting?.n ?? 0) + (reported?.n ?? 0);
   const items = [
     { href: "/admin", label: "Overview" },
     ...ENTITIES.map((e) => ({ href: `/admin/${e.key}`, label: e.label })),

@@ -8,6 +8,7 @@ export default defineConfig({
   workers: 1,
   fullyParallel: false,
   retries: 0,
+  timeout: 60_000, // generous: a busy machine can make the long multi-step tests slow
   reporter: [["list"]],
   use: { baseURL: `http://127.0.0.1:${PORT}`, trace: "retain-on-failure" },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],

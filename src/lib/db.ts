@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS users (
   role TEXT NOT NULL DEFAULT 'user',
   prefs TEXT NOT NULL DEFAULT '{}',
   banned INTEGER NOT NULL DEFAULT 0,
+  replies_seen_at TEXT NOT NULL DEFAULT '',
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE TABLE IF NOT EXISTS tapes (
@@ -104,9 +105,30 @@ CREATE TABLE IF NOT EXISTS comments (
   kind TEXT NOT NULL DEFAULT 'comment',
   body TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'visible',
+  parent_id INTEGER,
+  depth INTEGER NOT NULL DEFAULT 0,
+  edited_at TEXT,
+  deleted INTEGER NOT NULL DEFAULT 0,
+  pinned INTEGER NOT NULL DEFAULT 0,
+  spoiler INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_comments_tape ON comments(tape_id, status);
+CREATE TABLE IF NOT EXISTS comment_votes (
+  comment_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
+  value INTEGER NOT NULL,
+  PRIMARY KEY (comment_id, user_id)
+);
+CREATE TABLE IF NOT EXISTS comment_reports (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  comment_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
+  reason TEXT NOT NULL DEFAULT '',
+  resolved INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (comment_id, user_id)
+);
 CREATE TABLE IF NOT EXISTS rate_limits (
   key TEXT NOT NULL,
   at INTEGER NOT NULL
@@ -204,10 +226,34 @@ export const sql = {
 
 /** There is no migration framework: each change to an existing table is a guarded ALTER here. */
 async function migrate(d: Db) {
-  const cols = await d.all<{ name: string }>("PRAGMA table_info(tapes)");
-  if (!cols.some((c) => c.name === "youtube_url")) {
-    await d.run("ALTER TABLE tapes ADD COLUMN youtube_url TEXT NOT NULL DEFAULT ''");
-    await backfillYoutubeLinks(d);
+  if (await addColumn(d, "tapes", "youtube_url", "TEXT NOT NULL DEFAULT ''")) await backfillYoutubeLinks(d);
+
+  // Comment threads, votes and moderation (added for the discussion upgrade).
+  await addColumn(d, "comments", "parent_id", "INTEGER");
+  await addColumn(d, "comments", "depth", "INTEGER NOT NULL DEFAULT 0");
+  await addColumn(d, "comments", "edited_at", "TEXT");
+  await addColumn(d, "comments", "deleted", "INTEGER NOT NULL DEFAULT 0");
+  await addColumn(d, "comments", "pinned", "INTEGER NOT NULL DEFAULT 0");
+  await addColumn(d, "comments", "spoiler", "INTEGER NOT NULL DEFAULT 0");
+  await addColumn(d, "users", "replies_seen_at", "TEXT NOT NULL DEFAULT ''");
+  // Indexes on the new columns can only be made once the columns exist, so they live here and not in SCHEMA.
+  await d.batch([
+    { sql: "CREATE INDEX IF NOT EXISTS idx_comments_parent ON comments(parent_id)" },
+    { sql: "CREATE INDEX IF NOT EXISTS idx_comments_user ON comments(user_id)" },
+    { sql: "CREATE INDEX IF NOT EXISTS idx_reports_open ON comment_reports(resolved, comment_id)" },
+  ]);
+}
+
+/** Adds a column if the table does not have it yet. Returns true when it was added. Safe if two starts race. */
+async function addColumn(d: Db, table: string, column: string, ddl: string): Promise<boolean> {
+  const cols = await d.all<{ name: string }>(`PRAGMA table_info(${table})`);
+  if (cols.some((c) => c.name === column)) return false;
+  try {
+    await d.run(`ALTER TABLE ${table} ADD COLUMN ${column} ${ddl}`);
+    return true;
+  } catch (e) {
+    if (/duplicate column/i.test(String((e as Error).message))) return false; // another instance added it first
+    throw e;
   }
 }
 

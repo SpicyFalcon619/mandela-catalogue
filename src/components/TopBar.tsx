@@ -6,14 +6,14 @@ import { useEffect, useState } from "react";
 import { logoutAction } from "@/app/actions/auth";
 import { SettingsPanel } from "./SettingsPanel";
 
-type Props = { user: { username: string; role: string } | null; sections: { id: string; label: string }[] };
+type Props = { user: { username: string; role: string } | null; sections: { id: string; label: string }[]; unread?: number };
 
 function hms(s: number) {
   const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
   return `${h}:${String(m).padStart(2, "0")}:${String(x).padStart(2, "0")}`;
 }
 
-export function TopBar({ user, sections }: Props) {
+export function TopBar({ user, sections, unread = 0 }: Props) {
   const path = usePathname();
   const home = path === "/";
   const [open, setOpen] = useState(false);
@@ -51,6 +51,9 @@ export function TopBar({ user, sections }: Props) {
         </nav>
         <div className="tools2">
           <span className="ctr">{hms(secs)}</span>
+          <Link className="btn2" href="/search">
+            Search
+          </Link>
           <button type="button" className="btn2" onClick={() => setOpen(true)}>
             Display
           </button>
@@ -62,8 +65,8 @@ export function TopBar({ user, sections }: Props) {
                 </Link>
               )}
               <span className="who">{user.username}</span>
-              <Link className="btn2" href="/account">
-                Account
+              <Link className="btn2" href={unread > 0 ? "/account#replies" : "/account"} aria-label={unread > 0 ? `Account, ${unread} unread ${unread === 1 ? "reply" : "replies"}` : "Account"}>
+                Account{unread > 0 && <span className="badge-n">{unread > 99 ? "99+" : unread}</span>}
               </Link>
               <form action={logoutAction} style={{ display: "inline" }}>
                 <button type="submit" className="btn2">

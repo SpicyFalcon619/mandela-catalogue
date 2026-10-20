@@ -38,26 +38,26 @@ describe("failed submits echo non-secret input", () => {
     expect(res).toEqual({ error: "That username is taken.", username: taken.username });
   });
 
-  it("a rejected comment gives the draft and its type back", async () => {
+  it("a rejected comment gives the draft, its type and the spoiler flag back", async () => {
     await signInAs((await makeUser("user")).id);
-    const res = await postComment({}, form({ tape_id: "999999", kind: "theory", body: "My long, carefully written theory" }));
-    expect(res.error).toMatch(/does not exist/);
-    expect(res.body).toBe("My long, carefully written theory");
-    expect(res.kind).toBe("theory");
+    const res = await postComment({ tapeId: 999999, kind: "theory", body: "My long, carefully written theory", spoiler: true });
+    expect(res).toMatchObject({ ok: false, body: "My long, carefully written theory", kind: "theory", spoiler: true });
+    expect(!res.ok && res.error).toMatch(/does not exist/);
   });
 
   it("a rate-limited comment keeps the draft too", async () => {
     await signInAs((await makeUser("user")).id);
     let last = {} as Awaited<ReturnType<typeof postComment>>;
-    for (let i = 0; i < 6; i++) last = await postComment({}, form({ tape_id: "1", kind: "comment", body: `draft number ${i}` }));
-    expect(last.error).toMatch(/Slow down/);
-    expect(last.body).toBe("draft number 5");
+    for (let i = 0; i < 6; i++) last = await postComment({ tapeId: 1, kind: "comment", body: `draft number ${i}` });
+    expect(last.ok).toBe(false);
+    expect(!last.ok && last.error).toMatch(/Slow down/);
+    expect(!last.ok && last.body).toBe("draft number 5");
   });
 
-  it("a successful post returns no draft, so the form clears", async () => {
+  it("a successful post carries the new comment, so the form can clear", async () => {
     await signInAs((await makeUser("user")).id);
-    const res = await postComment({}, form({ tape_id: "1", kind: "comment", body: "posted fine" }));
-    expect(res.ok).toBeTruthy();
-    expect(res.body).toBeUndefined();
+    const res = await postComment({ tapeId: 1, kind: "comment", body: "posted fine" });
+    expect(res.ok).toBe(true);
+    expect(res.ok && res.comment.body).toBe("posted fine");
   });
 });

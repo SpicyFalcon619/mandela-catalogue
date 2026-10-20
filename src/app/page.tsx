@@ -1,4 +1,5 @@
 import { getCards, getCharacters, getGuide, getQuiz, getSettings, getSources, getTapes } from "@/lib/content";
+import { getCommentCounts } from "@/lib/comments";
 import { Rich, RichInline } from "@/lib/rich";
 import { Hero } from "@/components/Hero";
 import { Explorer } from "@/components/Explorer";
@@ -15,7 +16,7 @@ function hms(s: number) {
 }
 
 export default async function Home() {
-  const [s, tapes, premise, themes, mixups, reception, film, guide, characters, quiz, sources] = await Promise.all([
+  const [s, tapes, premise, themes, mixups, reception, film, guide, characters, quiz, sources, commentCounts] = await Promise.all([
     getSettings(),
     getTapes(),
     getCards("premise"),
@@ -27,6 +28,7 @@ export default async function Home() {
     getCharacters(),
     getQuiz(),
     getSources(),
+    getCommentCounts(),
   ]);
   const on = (k: string) => s[k] === "1";
   const years = tapes.length ? [...new Set(tapes.map((t) => t.releaseDate.slice(0, 4)))] : [];
@@ -60,7 +62,7 @@ export default async function Home() {
 
       {on("show_tapes") && (
         <section id="tapes">
-          <Explorer tapes={tapes} title={s.tapes_title} lede={s.tapes_lede} />
+          <Explorer tapes={tapes} title={s.tapes_title} lede={s.tapes_lede} commentCounts={commentCounts} />
         </section>
       )}
 

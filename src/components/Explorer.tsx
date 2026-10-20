@@ -25,7 +25,7 @@ function Reel() {
   );
 }
 
-export function Explorer({ tapes, title, lede }: { tapes: Tape[]; title: string; lede: string }) {
+export function Explorer({ tapes, title, lede, commentCounts = {} }: { tapes: Tape[]; title: string; lede: string; commentCounts?: Record<number, number> }) {
   const { prefs } = usePrefs();
   const mains = tapes.filter((t) => t.isMain);
   const [sel, setSel] = useState<number>(mains.length ? mains[mains.length - 1].id : tapes[0]?.id ?? 0);
@@ -152,7 +152,7 @@ export function Explorer({ tapes, title, lede }: { tapes: Tape[]; title: string;
         {cur.note && <p className="note">{cur.note}</p>}
         <p className="acts">
           {cur.youtubeUrl && <WatchLink className="btn sm watch" href={cur.youtubeUrl} title={cur.title}>Watch the original</WatchLink>}
-          <Link className="btn sm" href={`/tapes/${cur.id}`}>Open this tape&apos;s page: notes, theories, comments</Link>
+          <Link className="btn sm" href={`/tapes/${cur.id}`}>Open this tape&apos;s page: notes, theories, comments{commentCounts[cur.id] ? ` (${commentCounts[cur.id]})` : ""}</Link>
         </p>
         <Stills key={cur.id} tapeId={cur.id} label={`TAPE ${pad(cur.number)}`} />
       </article>

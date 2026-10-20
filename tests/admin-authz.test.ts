@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { deleteEntity, moderateComment, resetAllContent, saveEntity, saveSettings, updateUser } from "@/app/actions/admin";
+import { deleteEntity, moderateComment, pinComment, resetAllContent, resolveReports, saveEntity, saveSettings, updateUser } from "@/app/actions/admin";
 import { sql } from "@/lib/db";
 import { count, form, makeUser, redirectOf, resetRequest, signInAs } from "./helpers";
 
@@ -53,6 +53,16 @@ function cases(targetUserId: number, commentId: number): Case[] {
       changed: async () => await count("SELECT COUNT(*) AS n FROM users"),
     },
     {
+      name: "pinComment",
+      run: () => pinComment(commentId, true),
+      changed: async () => sql.get("SELECT pinned FROM comments WHERE id = ?", commentId),
+    },
+    {
+      name: "resolveReports",
+      run: () => resolveReports(form({ id: String(commentId), action: "dismiss" })),
+      changed: async () => sql.all("SELECT resolved FROM comment_reports WHERE comment_id = ?", commentId),
+    },
+    {
       name: "resetAllContent",
       run: () => resetAllContent(form({ confirm: "RESET" })),
       changed: async () => await count("SELECT COUNT(*) AS n FROM comments"),
@@ -70,12 +80,13 @@ describe("admin actions reject non-admins", () => {
     victim = (await makeUser("user")).id;
     member = (await makeUser("user")).id;
     comment = (await sql.run("INSERT INTO comments (tape_id, user_id, kind, body, status) VALUES (1, ?, 'theory', 'pending theory', 'pending')", victim)).lastId;
+    await sql.run("INSERT INTO comment_reports (comment_id, user_id, reason) VALUES (?, ?, 'spam')", comment, member);
   });
 
   it("covers every exported admin action", async () => {
     const mod = await import("@/app/actions/admin");
     const exported = Object.keys(mod).sort();
-    const tested = ["deleteEntity", "moderateComment", "resetAllContent", "saveEntity", "saveSettings", "updateUser"];
+    const tested = ["deleteEntity", "moderateComment", "pinComment", "resetAllContent", "resolveReports", "saveEntity", "saveSettings", "updateUser"];
     expect(exported).toEqual(tested);
   });
 

@@ -8,6 +8,7 @@ import { DEFAULT_SETTINGS, SETTING_FIELDS } from "@/lib/defaults";
 import { entityByKey, type Field } from "@/lib/entities";
 import { resetContent } from "@/lib/seed";
 import { youtubeHref } from "@/lib/youtube";
+import { purgeTapeComments, purgeUser, removeComment } from "@/lib/comments";
 
 function readField(f: Field, fd: FormData): { ok: true; value: unknown } | { ok: false; error: string } {
   switch (f.type) {
@@ -89,8 +90,8 @@ export async function deleteEntity(entityKey: string, fd: FormData) {
   const id = Number(fd.get("id"));
   if (Number.isInteger(id)) {
     const stmts: Stmt[] = [];
-    // Comments belong to a tape; remove them explicitly rather than relying on foreign-key cascades.
-    if (entityKey === "tapes") stmts.push({ sql: "DELETE FROM comments WHERE tape_id = ?", args: [id] });
+    // Comments (with their votes and reports) belong to a tape; remove them explicitly rather than rely on cascades.
+    if (entityKey === "tapes") stmts.push(...(await purgeTapeComments(id)));
     stmts.push({ sql: `DELETE FROM ${entity.table} WHERE id = ?`, args: [id] });
     await sql.batch(stmts);
   }
@@ -126,7 +127,7 @@ export async function moderateComment(fd: FormData) {
   if (Number.isInteger(id)) {
     if (action === "approve") await sql.run("UPDATE comments SET status='visible' WHERE id=?", id);
     else if (action === "hide") await sql.run("UPDATE comments SET status='hidden' WHERE id=?", id);
-    else if (action === "delete") await sql.run("DELETE FROM comments WHERE id=?", id);
+    else if (action === "delete") await removeComment(id);
   }
   if (Number.isInteger(tape)) revalidatePath(`/tapes/${tape}`);
   revalidatePath("/admin/moderation");
@@ -141,12 +142,7 @@ export async function updateUser(fd: FormData) {
   else if (action === "make_user") await sql.run("UPDATE users SET role='user' WHERE id=?", id);
   else if (action === "ban") await sql.run("UPDATE users SET banned=1 WHERE id=?", id);
   else if (action === "unban") await sql.run("UPDATE users SET banned=0 WHERE id=?", id);
-  else if (action === "delete") {
-    await sql.batch([
-      { sql: "DELETE FROM comments WHERE user_id=?", args: [id] },
-      { sql: "DELETE FROM users WHERE id=?", args: [id] },
-    ]);
-  }
+  else if (action === "delete") await purgeUser(id, me.id);
   revalidatePath("/admin/users");
 }
 
@@ -158,3 +154,34 @@ export async function resetAllContent(fd: FormData) {
   redirect("/admin?reset=1");
 }
 
+/** Pin one top-level comment to the top of its tape's discussion (or unpin it). Only one comment is pinned per tape. */
+export async function pinComment(commentId: number, pinned: boolean) {
+  await requireAdmin();
+  const row = Number.isInteger(commentId)
+    ? await sql.get<{ tape_id: number; depth: number; status: string; deleted: number }>("SELECT tape_id, depth, status, deleted FROM comments WHERE id = ?", commentId)
+    : undefined;
+  if (!row) return { ok: false as const, error: "That comment is gone." };
+  if (pinned && (row.depth !== 0 || row.status !== "visible" || row.deleted)) {
+    return { ok: false as const, error: "Only visible top-level comments can be pinned." };
+  }
+  await sql.batch([
+    { sql: "UPDATE comments SET pinned = 0 WHERE tape_id = ?", args: [row.tape_id] },
+    ...(pinned ? [{ sql: "UPDATE comments SET pinned = 1 WHERE id = ?", args: [commentId] }] : []),
+  ]);
+  revalidatePath(`/tapes/${row.tape_id}`);
+  return { ok: true as const, pinnedId: pinned ? commentId : null };
+}
+
+/** From the moderation queue: "dismiss" closes the reports, "restore" also un-hides a comment the reports hid. */
+export async function resolveReports(fd: FormData) {
+  await requireAdmin();
+  const id = Number(fd.get("id"));
+  const action = String(fd.get("action"));
+  if (!Number.isInteger(id)) return;
+  if (action === "dismiss" || action === "restore") {
+    const stmts = [{ sql: "UPDATE comment_reports SET resolved = 1 WHERE comment_id = ?", args: [id] }];
+    if (action === "restore") stmts.push({ sql: "UPDATE comments SET status = 'visible' WHERE id = ? AND status = 'hidden'", args: [id] });
+    await sql.batch(stmts);
+  }
+  revalidatePath("/admin/moderation");
+}

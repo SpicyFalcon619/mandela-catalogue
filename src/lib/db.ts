@@ -238,6 +238,12 @@ async function migrate(d: Db) {
   await addColumn(d, "comments", "pinned", "INTEGER NOT NULL DEFAULT 0");
   await addColumn(d, "comments", "spoiler", "INTEGER NOT NULL DEFAULT 0");
   await addColumn(d, "users", "replies_seen_at", "TEXT NOT NULL DEFAULT ''");
+  // Wording that described the site as having no footage now says the videos play from YouTube. Only text that is
+  // still exactly the old default is replaced, so anything an admin edited is left alone.
+  await d.batch([
+    { sql: "UPDATE settings SET value = ? WHERE key = 'credit_line' AND value = ?", args: [NEW_CREDIT_LINE, OLD_CREDIT_LINE] },
+    { sql: "UPDATE settings SET value = ? WHERE key = 'sources_lede' AND value = ?", args: [NEW_SOURCES_LEDE, OLD_SOURCES_LEDE] },
+  ]);
   // Indexes on the new columns can only be made once the columns exist, so they live here and not in SCHEMA.
   await d.batch([
     { sql: "CREATE INDEX IF NOT EXISTS idx_comments_parent ON comments(parent_id)" },
@@ -245,6 +251,11 @@ async function migrate(d: Db) {
     { sql: "CREATE INDEX IF NOT EXISTS idx_reports_open ON comment_reports(resolved, comment_id)" },
   ]);
 }
+
+const OLD_CREDIT_LINE = 'Fan-made explainer. Not affiliated with Alex Kister or the series. The Mandela Catalogue, its footage, characters and designs are © Alex Kister. This site contains none of them; it links to the originals.';
+const NEW_CREDIT_LINE = "Fan-made explainer. Not affiliated with Alex Kister or the series. The Mandela Catalogue, its footage, characters and designs are © Alex Kister. This site hosts none of them: the videos play from YouTube's own player and everything else links to the originals.";
+const OLD_SOURCES_LEDE = 'Where to see the real footage and read more. This site contains no frames or character art from the series; it links to the originals.';
+const NEW_SOURCES_LEDE = "Where to see the real footage and read more. This site hosts no frames, clips or character art from the series: the videos play from YouTube's own player and everything else links to the originals.";
 
 /** Adds a column if the table does not have it yet. Returns true when it was added. Safe if two starts race. */
 async function addColumn(d: Db, table: string, column: string, ddl: string): Promise<boolean> {

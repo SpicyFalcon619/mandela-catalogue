@@ -72,8 +72,6 @@ export function Hero({ kicker, title1, title2, sub, stats }: Props) {
     };
   }, [prefs.fx]);
 
-  const nextFx = prefs.fx === "full" ? "low" : prefs.fx === "low" ? "off" : "full";
-
   return (
     <div className="hero">
       <canvas ref={cv} width={320} height={200} aria-hidden="true" />
@@ -104,11 +102,8 @@ export function Hero({ kicker, title1, title2, sub, stats }: Props) {
       </dl>
       <div className="tools">
         <Link className="btn fill" href="/#tapes">Open the tapes</Link>
-        <button type="button" className="btn" aria-pressed={prefs.spoilers} onClick={() => set({ spoilers: !prefs.spoilers })}>
+        <button type="button" className="btn" aria-pressed={prefs.spoilers} onClick={() => set({ spoilers: !prefs.spoilers })} title="Blur plot summaries until you click them">
           Spoiler guard: {prefs.spoilers ? "on" : "off"}
-        </button>
-        <button type="button" className="btn fxbtn" aria-pressed={prefs.fx !== "full"} onClick={() => set({ fx: nextFx })} title="Cycles full, low, off">
-          Effects: {prefs.fx}
         </button>
       </div>
     </div>

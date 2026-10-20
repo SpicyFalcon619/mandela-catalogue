@@ -370,6 +370,7 @@ test.describe("discussion", () => {
 
     await a.page.goto("/");
     await expect(a.page.locator(".badge-n")).toHaveText("1");
+    await a.page.getByRole("button", { name: "Your account menu" }).click();
     await a.page.getByRole("link", { name: /Account/ }).click();
     await expect(a.page.getByRole("heading", { name: /Replies to you \(1 new\)/ })).toBeVisible();
     await expect(a.page.locator(".cm.reply.new")).toContainText(answer);
@@ -408,7 +409,7 @@ test.describe("site search", () => {
   test("finds tapes, case files and the guide from the top bar", async ({ browser }) => {
     const g = await guest(browser);
     await g.page.goto("/");
-    await g.page.getByRole("link", { name: "Search" }).click();
+    await g.page.locator("header.nav").getByRole("link", { name: "Search" }).click();
     await expect(g.page).toHaveURL(/\/search$/);
     await g.page.getByPlaceholder(/Search for a name/).fill("Gabriel");
     await g.page.getByRole("button", { name: "Search", exact: true }).click();

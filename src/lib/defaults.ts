@@ -30,14 +30,14 @@ export const DEFAULT_SETTINGS: Record<string, string> = {
   quiz_title: "How well do you know the tapes?",
   sources_title: "Sources",
   sources_lede:
-    "Where to see the real footage and read more. This site contains no frames or character art from the series; it links to the originals.",
+    "Where to see the real footage and read more. This site hosts no frames, clips or character art from the series: the videos play from YouTube's own player and everything else links to the originals.",
   method_title: "How reliable is this site?",
   method_note:
     "Episode data comes from the Wikipedia article; titles, release dates and runtimes were last checked against its source text on October 20, 2026. In-world dates marked inferred are interpretations of that summary and the episode titles, not stated facts. Wikipedia's summary uses M.A.D. and the T.H.I.N.K. Principle without defining them, so the glossary says so. Plot summaries describe fiction and may contain mistakes, so check them against the tapes.",
   content_note:
     "Content note: the series deals with suicide, child abduction and grief. If any of that is close to home, talking to someone you trust, or a local support line, can help.",
   credit_line:
-    "Fan-made explainer. Not affiliated with Alex Kister or the series. The Mandela Catalogue, its footage, characters and designs are © Alex Kister. This site contains none of them; it links to the originals.",
+    "Fan-made explainer. Not affiliated with Alex Kister or the series. The Mandela Catalogue, its footage, characters and designs are © Alex Kister. This site hosts none of them: the videos play from YouTube's own player and everything else links to the originals.",
   default_theme: "tape",
   accent_red: "#ff3b30",
   accent_blue: "#2a3cf5",

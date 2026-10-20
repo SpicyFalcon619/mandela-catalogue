@@ -107,6 +107,7 @@ test.describe("accounts", () => {
   test("register, sign out, sign back in", async ({ page }) => {
     const u = name("acct");
     await register(page, u);
+    await page.getByRole("button", { name: "Your account menu" }).click();
     await page.getByRole("button", { name: "Sign out" }).click();
     await expect(page.locator(".who")).toHaveCount(0);
     await login(page, u, PASSWORD);
@@ -430,13 +431,7 @@ test.describe("original footage", () => {
   });
 
   test("an admin can change the channel credit", async ({ browser }) => {
-    const ctx = await browser.newContext({ baseURL: "http://127.0.0.1:3100" });
-    const page = await ctx.newPage();
-    await page.goto("/login");
-    await page.locator('input[name="username"]').fill(ADMIN.username);
-    await page.locator('input[name="password"]').fill(ADMIN.password);
-    await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page.locator(".who")).toHaveText(ADMIN.username);
+    const { ctx, page } = await asAdmin(browser);
     await page.goto("/admin/tapes/3");
     await expect(page.locator('input[name="youtube_channel"]')).toHaveValue("Alex Kister");
     await page.locator('input[name="youtube_channel"]').fill("Some Other Channel");
@@ -450,5 +445,130 @@ test.describe("original footage", () => {
     await page.goto("/tapes/3");
     await expect(page.locator(".vid figcaption")).not.toContainText("Some Other Channel");
     await ctx.close();
+  });
+});
+
+test.describe("site shell: navigation bar, footer and helpers", () => {
+  const SECTIONS = ["Premise", "Tapes", "Field guide", "Case files", "Reading it", "Outside", "Test", "Sources"];
+
+  test("on a wide screen the bar is one tidy row with every section and no clutter", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/");
+    const bar = page.locator("header.nav");
+    const nav = bar.getByRole("navigation", { name: "Sections" });
+    for (const s of SECTIONS) await expect(nav.getByRole("link", { name: s, exact: true })).toBeVisible();
+    await expect(bar.getByRole("link", { name: "Search" })).toBeVisible();
+    await expect(bar.getByRole("button", { name: "Display" })).toBeVisible();
+    await expect(bar.getByRole("link", { name: "Sign in" })).toBeVisible();
+    await expect(bar.getByRole("button", { name: "Menu" })).toBeHidden();
+    // One row, nothing wider than the bar, no running clock.
+    const box = (await bar.boundingBox())!;
+    expect(box.height).toBeLessThan(64);
+    expect(await bar.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(0);
+    await expect(bar).not.toContainText(/\d:\d\d:\d\d/);
+    // The links do not overlap each other or the tools.
+    const rects = await bar.locator(".nav-brand, .nav-links, .nav-tools").evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [r.left, r.right]; }));
+    for (let i = 1; i < rects.length; i++) expect(rects[i][0], "bar parts overlap").toBeGreaterThanOrEqual(rects[i - 1][1] - 1);
+  });
+
+  test("on a narrower screen the sections move into a menu", async ({ page }) => {
+    await page.setViewportSize({ width: 900, height: 800 });
+    await page.goto("/");
+    const bar = page.locator("header.nav");
+    await expect(bar.getByRole("navigation", { name: "Sections" })).toBeHidden();
+    const burger = bar.getByRole("button", { name: "Menu" });
+    await expect(burger).toBeVisible();
+    expect((await bar.boundingBox())!.height).toBeLessThan(64);
+    await burger.click();
+    const sheet = page.locator("#nav-sheet");
+    for (const s of SECTIONS) await expect(sheet.getByRole("link", { name: s, exact: true })).toBeVisible();
+    await sheet.getByRole("link", { name: "Field guide", exact: true }).click();
+    await expect(page).toHaveURL(/#guide$/);
+    await expect(page.locator("#nav-sheet")).toHaveCount(0); // closes after choosing
+  });
+
+  test("on a phone the bar stays one row, fits, and the menu works", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+    const bar = page.locator("header.nav");
+    expect((await bar.boundingBox())!.height).toBeLessThan(64);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+    await expect(bar.locator(".nav-brand")).toBeVisible();
+    await expect(bar.getByRole("link", { name: "Search" })).toBeVisible();
+    await expect(bar.getByRole("button", { name: "Display" })).toBeVisible();
+    await bar.getByRole("button", { name: "Menu" }).click();
+    await expect(page.locator("#nav-sheet").getByRole("link", { name: "Sign up" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.locator("#nav-sheet")).toHaveCount(0);
+    // The menu button itself also fits inside the screen.
+    const b = (await bar.getByRole("button", { name: "Menu" }).boundingBox())!;
+    expect(b.x + b.width).toBeLessThanOrEqual(390);
+  });
+
+  test("the account menu holds account, admin and sign out, and closes on Escape or an outside click", async ({ browser }) => {
+    const { ctx, page } = await asAdmin(browser); // signing in over and over would hit the sign-in rate limit
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const bar = page.locator("header.nav");
+    // Closed: none of the account links crowd the bar.
+    await expect(bar.getByRole("link", { name: "Account" })).toHaveCount(0);
+    await expect(bar.getByRole("button", { name: "Sign out" })).toHaveCount(0);
+    const trigger = bar.getByRole("button", { name: "Your account menu" });
+    await trigger.click();
+    await expect(trigger).toHaveAttribute("aria-expanded", "true");
+    const menu = page.locator("#account-menu");
+    await expect(menu).toContainText(`Signed in as ${ADMIN.username}`);
+    await expect(menu.getByRole("link", { name: "Account" })).toBeVisible();
+    await expect(menu.getByRole("link", { name: "Admin" })).toBeVisible();
+    await expect(menu.getByRole("button", { name: "Sign out" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(menu).toHaveCount(0);
+    await trigger.click();
+    await expect(menu).toBeVisible();
+    await page.locator("h1").first().click({ position: { x: 5, y: 5 } });
+    await expect(menu).toHaveCount(0);
+    await trigger.click();
+    await menu.getByRole("link", { name: "Admin" }).click();
+    await expect(page).toHaveURL(/\/admin$/);
+    await expect(page.locator("#account-menu")).toHaveCount(0); // closes when you navigate
+    await ctx.close();
+  });
+
+  test("the first Tab offers a skip link that jumps to the content", async ({ page }) => {
+    await page.goto("/login");
+    await page.keyboard.press("Tab");
+    const skip = page.getByRole("link", { name: "Skip to content" });
+    await expect(skip).toBeFocused();
+    await expect(skip).toBeVisible();
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(/#content$/);
+  });
+
+  test("the footer has real links, and back to top appears after scrolling", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/");
+    const foot = page.locator("footer.site-foot");
+    await expect(foot).toContainText("Content note");
+    for (const n of ["Home", "All tapes", "Search", "Sources", "Source code", "Report a mistake"]) {
+      await expect(foot.getByRole("link", { name: n, exact: true })).toBeVisible();
+    }
+    await expect(foot.getByRole("link", { name: "Source code" })).toHaveAttribute("href", /github\.com\/SpicyFalcon619\/mandela-catalogue$/);
+    await expect(foot.getByRole("link", { name: "Source code" })).toHaveAttribute("rel", /noopener/);
+    await expect(page.getByRole("button", { name: "Back to top" })).toHaveCount(0);
+    await page.evaluate(() => { document.documentElement.style.scrollBehavior = "auto"; window.scrollTo(0, 2500); });
+    const top = page.getByRole("button", { name: "Back to top" });
+    await expect(top).toBeVisible();
+    await top.click();
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+    await expect(top).toHaveCount(0);
+  });
+
+  test("the hero keeps one main action and the spoiler toggle; effects live in Display", async ({ page }) => {
+    await page.goto("/");
+    const hero = page.locator(".hero");
+    await expect(hero.getByRole("link", { name: "Open the tapes" })).toBeVisible();
+    await expect(hero.getByRole("button", { name: /Spoiler guard/ })).toBeVisible();
+    await expect(hero.getByRole("button", { name: /Effects/ })).toHaveCount(0);
+    await page.getByRole("button", { name: "Display" }).click();
+    await expect(page.getByRole("dialog", { name: "Display settings" })).toContainText("Effects");
   });
 });

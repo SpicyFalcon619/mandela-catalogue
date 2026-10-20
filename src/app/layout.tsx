@@ -6,6 +6,7 @@ import { getSettings } from "@/lib/content";
 import { countUnreadReplies } from "@/lib/comments";
 import { getPrefs } from "@/lib/prefs-server";
 import { PrefsProvider } from "@/components/PrefsProvider";
+import { BackToTop } from "@/components/BackToTop";
 import { TopBar } from "@/components/TopBar";
 
 const FONTS =
@@ -61,18 +62,31 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <PrefsProvider initial={prefs}>
+          <a className="skip" href="#content">Skip to content</a>
           <div className="wrap">
             <TopBar user={user ? { username: user.username, role: user.role } : null} sections={sections} unread={unread} />
-            {children}
-            <footer>
-              <p>{s.content_note}</p>
-              <p>{s.credit_line}</p>
-              <p>
-                {user?.role === "admin" && <><Link href="/admin">Admin</Link> · </>}
-                <Link href="/">Home</Link>
-              </p>
+            <div id="content" tabIndex={-1}>
+              {children}
+            </div>
+            <footer className="site-foot">
+              <div className="foot-grid">
+                <div className="foot-note">
+                  <p>{s.content_note}</p>
+                  <p className="foot-credit">{s.credit_line}</p>
+                </div>
+                <nav className="foot-links" aria-label="Site">
+                  <Link href="/">Home</Link>
+                  <Link href="/#tapes">All tapes</Link>
+                  <Link href="/search">Search</Link>
+                  <Link href="/#sources">Sources</Link>
+                  <a href="https://github.com/SpicyFalcon619/mandela-catalogue" target="_blank" rel="noopener noreferrer">Source code</a>
+                  <a href="https://github.com/SpicyFalcon619/mandela-catalogue/issues/new" target="_blank" rel="noopener noreferrer">Report a mistake</a>
+                  {user?.role === "admin" && <Link href="/admin">Admin</Link>}
+                </nav>
+              </div>
             </footer>
           </div>
+          <BackToTop />
         </PrefsProvider>
       </body>
     </html>

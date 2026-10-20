@@ -13,7 +13,7 @@ export function AuthForm({ mode, next }: { mode: "login" | "register"; next: str
       <input type="hidden" name="next" value={next} />
       <label>
         Username
-        <input type="text" name="username" autoComplete="username" required minLength={3} maxLength={24} />
+        <input type="text" name="username" autoComplete="username" required minLength={3} maxLength={24} defaultValue={state.username} />
         {mode === "register" && <small>3 to 24 letters, numbers or underscores.</small>}
       </label>
       <label>

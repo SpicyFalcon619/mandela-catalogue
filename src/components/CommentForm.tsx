@@ -18,7 +18,7 @@ export function CommentForm({ tapeId, comments, submissions }: { tapeId: number;
       <input type="hidden" name="tape_id" value={tapeId} />
       <label>
         Post type
-        <select name="kind" defaultValue={comments ? "comment" : "theory"}>
+        <select name="kind" defaultValue={state.kind ?? (comments ? "comment" : "theory")}>
           {comments && <option value="comment">Comment (shows right away)</option>}
           {submissions && <option value="theory">Fan theory (reviewed first)</option>}
           {submissions && <option value="correction">Correction to this page (reviewed first)</option>}
@@ -26,7 +26,7 @@ export function CommentForm({ tapeId, comments, submissions }: { tapeId: number;
       </label>
       <label>
         Your post
-        <textarea name="body" required minLength={3} maxLength={1500} placeholder="Keep it about the tape. No spoilers for other tapes without saying so." />
+        <textarea name="body" required minLength={3} maxLength={1500} defaultValue={state.body} placeholder="Keep it about the tape. No spoilers for other tapes without saying so." />
       </label>
       {state.error && <p className="err" role="alert">{state.error}</p>}
       {state.ok && <p className="okmsg">{state.ok}</p>}

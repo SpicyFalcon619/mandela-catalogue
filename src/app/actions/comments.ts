@@ -16,15 +16,16 @@ export async function postComment(_prev: FormState, fd: FormData): Promise<FormS
   const tapeId = Number(fd.get("tape_id"));
   const kind = String(fd.get("kind") ?? "comment");
   const body = String(fd.get("body") ?? "").trim();
-  if (!(KINDS as readonly string[]).includes(kind)) return { error: "Unknown post type." };
-  if (kind === "comment" && settings.comments_enabled !== "1") return { error: "Comments are turned off." };
-  if (kind !== "comment" && settings.submissions_enabled !== "1") return { error: "Theories and corrections are turned off." };
-  if (body.length < 3) return { error: "Write a little more." };
-  if (body.length > 1500) return { error: "Keep it under 1,500 characters." };
+  const keep = (error: string): FormState => ({ error, body, kind });
+  if (!(KINDS as readonly string[]).includes(kind)) return keep("Unknown post type.");
+  if (kind === "comment" && settings.comments_enabled !== "1") return keep("Comments are turned off.");
+  if (kind !== "comment" && settings.submissions_enabled !== "1") return keep("Theories and corrections are turned off.");
+  if (body.length < 3) return keep("Write a little more.");
+  if (body.length > 1500) return keep("Keep it under 1,500 characters.");
   if (!Number.isInteger(tapeId) || !db().prepare("SELECT 1 FROM tapes WHERE id = ? AND published = 1").get(tapeId)) {
-    return { error: "That tape does not exist." };
+    return keep("That tape does not exist.");
   }
-  if (tooMany(`post:${user.id}`, 5, 60 * 1000)) return { error: "Slow down a little." };
+  if (tooMany(`post:${user.id}`, 5, 60 * 1000)) return keep("Slow down a little.");
   // Comments appear straight away. Theories and corrections wait for an admin, except admins' own.
   const status = kind === "comment" || user.role === "admin" ? "visible" : "pending";
   db().prepare("INSERT INTO comments (tape_id, user_id, kind, body, status) VALUES (?,?,?,?,?)").run(tapeId, user.id, kind, body, status);

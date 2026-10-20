@@ -77,6 +77,33 @@ test.describe("accounts", () => {
     await expect(page.locator(".who")).toHaveCount(0);
   });
 
+  test("a failed sign-in or sign-up keeps the username but never the passwords", async ({ page }) => {
+    await page.goto("/login");
+    await page.locator('input[name="username"]').fill(ADMIN.username);
+    await page.locator('input[name="password"]').fill("not-the-password");
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page.locator("p.err")).toBeVisible();
+    await expect(page.locator('input[name="username"]')).toHaveValue(ADMIN.username);
+    await expect(page.locator('input[name="password"]')).toHaveValue("");
+    // The retry works without retyping the username.
+    await page.locator('input[name="password"]').fill(ADMIN.password);
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page.locator(".who")).toHaveText(ADMIN.username);
+
+    const other = await page.context().browser()!.newContext();
+    const p2 = await other.newPage();
+    await p2.goto("/register");
+    await p2.locator('input[name="username"]').fill(name("echo"));
+    await p2.locator('input[name="password"]').fill(PASSWORD);
+    await p2.locator('input[name="confirm"]').fill("something-else-123");
+    await p2.getByRole("button", { name: "Create account" }).click();
+    await expect(p2.locator("p.err")).toHaveText("The two passwords do not match.");
+    await expect(p2.locator('input[name="username"]')).toHaveValue(name("echo"));
+    await expect(p2.locator('input[name="password"]')).toHaveValue("");
+    await expect(p2.locator('input[name="confirm"]')).toHaveValue("");
+    await other.close();
+  });
+
   test("register, sign out, sign back in", async ({ page }) => {
     const u = name("acct");
     await register(page, u);

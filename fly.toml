@@ -1,36 +1,39 @@
-# Fly.io config. See "Deploying" in the README for the exact commands.
-# `fly launch --copy-config --no-deploy` asks for a free app name and a region and fills them in.
-app = "mandela-catalogue"
+# Fly.io config for mandela-catalogue.fly.dev (Singapore). See "Deploying" in the README.
+# Deploy with `fly deploy --ha=false`: one machine only. The SQLite volume belongs to one machine, and
+# the sign-in and posting rate limits are kept in that machine's memory.
+
+app = 'mandela-catalogue'
+primary_region = 'sin'
 
 [build]
-  dockerfile = "Dockerfile"
+  dockerfile = 'Dockerfile'
 
 [env]
-  PORT = "3000"
-  HOSTNAME = "0.0.0.0"
-  DATABASE_PATH = "/data/mandela.db"
+  DATABASE_PATH = '/data/mandela.db'
+  HOSTNAME = '0.0.0.0'
+  PORT = '3000'
 
-# SQLite lives on this volume. A volume belongs to one machine, so keep exactly one machine.
+# SQLite lives on this volume (encrypted, daily snapshots kept 5 days).
 [[mounts]]
-  source = "mandela_data"
-  destination = "/data"
-  initial_size = "1gb"
+  source = 'mandela_data'
+  destination = '/data'
+  initial_size = '1gb'
 
 [http_service]
   internal_port = 3000
   force_https = true
-  # One always-on machine: the sign-in and posting rate limits live in its memory.
-  auto_stop_machines = "off"
+  # Always on: no cold starts, and the in-memory rate limits are not reset by a stop.
+  auto_stop_machines = 'off'
   auto_start_machines = true
   min_machines_running = 1
 
   [[http_service.checks]]
-    method = "GET"
-    path = "/login"
-    interval = "30s"
-    timeout = "5s"
-    grace_period = "20s"
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '20s'
+    method = 'GET'
+    path = '/login'
 
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "512mb"
+  size = 'shared-cpu-1x'
+  memory = '512mb'

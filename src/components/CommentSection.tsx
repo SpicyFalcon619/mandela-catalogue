@@ -185,9 +185,12 @@ function Composer(props: {
           placeholder={mode === "post" ? "Keep it about the tape. Tick the spoiler box if you give away plot." : ""}
           onChange={(e) => setBody(e.target.value)}
           onKeyDown={(e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+            if (e.key !== "Enter" || e.nativeEvent.isComposing) return;
+            const touch = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
+            // Enter posts; Shift+Enter starts a new line. On a phone the Enter key stays a new line (use the button).
+            if (e.ctrlKey || e.metaKey || (!e.shiftKey && !touch)) {
               e.preventDefault();
-              void send();
+              if (!short) void send();
             }
           }}
         />
@@ -211,7 +214,7 @@ function Composer(props: {
       </div>
       {error && <p className="err" role="alert">{error}</p>}
       {message && <p className="okmsg" role="status">{message}</p>}
-      {mode === "post" && <p className="cmt-hint">Ctrl+Enter posts. Plain text only.</p>}
+      {mode === "post" && <p className="cmt-hint">Press Enter to post, Shift+Enter for a new line. Plain text only.</p>}
     </form>
   );
 }
@@ -276,11 +279,22 @@ export function CommentSection({ tapeId, initial, viewer, commentsOn, submission
 
   const { roots, matches } = useMemo(() => buildTree(comments, { sort, kind: kindTab, query }), [comments, sort, kindTab, query]);
   const total = countComments(comments);
+  // Each tab counts every visible post in its threads, replies included, so "All" matches the number in the heading.
   const tabCounts = useMemo(() => {
+    const byId = new Map(comments.map((x) => [x.id, x]));
+    const threadKind = (x: CommentDTO): CommentKind => {
+      let top = x;
+      for (let i = 0; i < 10 && top.parentId !== null; i++) {
+        const up = byId.get(top.parentId);
+        if (!up) break;
+        top = up;
+      }
+      return top.kind;
+    };
     const c: Record<KindFilter, number> = { all: 0, comment: 0, theory: 0, correction: 0 };
     for (const x of comments) {
-      if (x.parentId !== null || x.deleted || x.status !== "visible") continue;
-      c[x.kind] += 1;
+      if (x.deleted || x.status !== "visible") continue;
+      c[threadKind(x)] += 1;
       c.all += 1;
     }
     return c;
@@ -368,35 +382,23 @@ export function CommentSection({ tapeId, initial, viewer, commentsOn, submission
     const hasKids = n.children.length > 0;
     const sc = score(n);
     const spoilerHidden = n.spoiler && !revealed.has(n.id) && !mine;
+    const votable = !n.deleted && n.status === "visible";
+    const voteTitle = (dir: string) => (!viewer ? "Sign in to vote" : mine ? "You cannot vote on your own comment" : dir);
     return (
       <li key={n.id} id={`c${n.id}`} className={`cmt${n.status === "pending" ? " pending" : ""}${n.pinned ? " pinned" : ""}${target === n.id ? " flash" : ""}${n.deleted ? " gone" : ""}${n.depth === 0 ? " top" : ""}`}>
-        <div className="cmt-vote" aria-label={n.deleted ? undefined : `Score ${sc}`}>
-          {!n.deleted && n.status === "visible" ? (
-            <>
-              <button type="button" className={`cmt-arrow${n.myVote === 1 ? " on" : ""}`} aria-pressed={n.myVote === 1} aria-label="Upvote" title={!viewer ? "Sign in to vote" : mine ? "You cannot vote on your own comment" : "Upvote"} disabled={!viewer || mine} onClick={() => void onVote(n, 1)}>
-                <Arrow up />
-              </button>
-              <span className={`cmt-score${sc > 0 ? " pos" : sc < 0 ? " neg" : ""}`}>{sc}</span>
-              <button type="button" className={`cmt-arrow down${n.myVote === -1 ? " on" : ""}`} aria-pressed={n.myVote === -1} aria-label="Downvote" title={!viewer ? "Sign in to vote" : mine ? "You cannot vote on your own comment" : "Downvote"} disabled={!viewer || mine} onClick={() => void onVote(n, -1)}>
-                <Arrow up={false} />
-              </button>
-            </>
-          ) : (
-            <span className="cmt-score" aria-hidden="true">·</span>
-          )}
-        </div>
         <div className="cmt-main">
           <div className="cmt-meta">
-            <button type="button" className="cmt-fold" aria-expanded={!closed} aria-label={closed ? "Expand thread" : "Collapse thread"} onClick={() => toggleCollapsed(n.id)}>
-              {closed ? "[+]" : "[–]"}
+            <button type="button" className="cmt-fold" aria-expanded={!closed} aria-label={closed ? "Expand thread" : "Collapse thread"} title={closed ? "Expand thread" : "Collapse thread"} onClick={() => toggleCollapsed(n.id)}>
+              {closed ? "+" : "\u2212"}
             </button>
             <span className="cmt-user">{n.username}</span>
-            {n.role === "admin" && !n.deleted && <span className="tag admin">Admin</span>}
-            {n.pinned && <span className="tag pin">Pinned</span>}
+            {n.role === "admin" && !n.deleted && <span className="tag tag-admin">Admin</span>}
+            {n.pinned && <span className="tag tag-pin">Pinned</span>}
             {n.depth === 0 && n.kind !== "comment" && !n.deleted && <span className={`kind${n.kind === "theory" ? " t" : " c"}`}>{KIND_LABEL[n.kind]}</span>}
-            {n.spoiler && !n.deleted && <span className="tag spoiler">Spoilers</span>}
+            {n.spoiler && !n.deleted && <span className="tag tag-spoiler">Spoilers</span>}
+            <span className="cmt-dot" aria-hidden="true">&middot;</span>
             {renderTime(n)}
-            {n.editedAt && <span className="cmt-edited" title={`Edited ${n.editedAt} UTC`}>edited</span>}
+            {n.editedAt && <span className="cmt-edited" title={`Edited ${n.editedAt} UTC`}>(edited)</span>}
             {n.status === "pending" && <span className="pill">awaiting review</span>}
           </div>
           {closed ? (
@@ -433,6 +435,17 @@ export function CommentSection({ tapeId, initial, viewer, commentsOn, submission
               )}
               {!n.deleted && editing !== n.id && (
                 <div className="cmt-actions">
+                  {votable && (
+                    <span className="cmt-vote" role="group" aria-label={`Votes, score ${sc}`}>
+                      <button type="button" className={`cmt-arrow${n.myVote === 1 ? " on" : ""}`} aria-pressed={n.myVote === 1} aria-label="Upvote" title={voteTitle("Upvote")} disabled={!viewer || mine} onClick={() => void onVote(n, 1)}>
+                        <Arrow up />
+                      </button>
+                      <span className={`cmt-score${sc > 0 ? " pos" : sc < 0 ? " neg" : ""}`} title="Score: upvotes minus downvotes">{sc}</span>
+                      <button type="button" className={`cmt-arrow down${n.myVote === -1 ? " on" : ""}`} aria-pressed={n.myVote === -1} aria-label="Downvote" title={voteTitle("Downvote")} disabled={!viewer || mine} onClick={() => void onVote(n, -1)}>
+                        <Arrow up={false} />
+                      </button>
+                    </span>
+                  )}
                   {viewer && commentsOn && n.status === "visible" && (
                     <button type="button" onClick={() => setReplyTo(replyTo === n.id ? null : n.id)}>Reply</button>
                   )}
@@ -446,13 +459,13 @@ export function CommentSection({ tapeId, initial, viewer, commentsOn, submission
                       <button type="button" onClick={() => setConfirmDelete(null)}>No</button>
                     </span>
                   )}
+                  {isAdmin && n.depth === 0 && n.status === "visible" && (
+                    <button type="button" onClick={() => void onPin(n)}>{n.pinned ? "Unpin" : "Pin"}</button>
+                  )}
                   {viewer && !mine && n.status === "visible" && (
                     <button type="button" className="cmt-report" onClick={() => setReporting(reporting === n.id ? null : n.id)}>
                       <FlagIcon /> Report
                     </button>
-                  )}
-                  {isAdmin && n.depth === 0 && n.status === "visible" && (
-                    <button type="button" onClick={() => void onPin(n)}>{n.pinned ? "Unpin" : "Pin"}</button>
                   )}
                 </div>
               )}

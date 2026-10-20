@@ -64,6 +64,65 @@ async function compose(page: Page, text: string, opts: { kind?: string; spoiler?
 }
 
 test.describe("discussion", () => {
+  test("Enter posts a comment and Shift+Enter makes a new line", async ({ browser }) => {
+    const a = await visitor(browser, "e1");
+    await a.page.goto("/tapes/15");
+    const box = a.page.getByLabel("Your post");
+    const first = uniq("linefirst");
+    const second = uniq("linesecond");
+    await box.fill(first);
+    await box.press("Shift+Enter");
+    await box.pressSequentially(second);
+    await expect(box).toHaveValue(`${first}\n${second}`); // a new line, not posted yet
+    await expect(a.page.locator(".cmt-compose .okmsg")).toHaveCount(0);
+    await box.press("Enter");
+    await expect(a.page.locator(".cmt-compose .okmsg")).toHaveText("Posted.");
+    await expect(item(a.page, first)).toBeVisible();
+    await expect(box).toHaveValue("");
+    // Enter on an empty box posts nothing and does not complain.
+    const before = await a.page.locator("li.cmt").count();
+    await box.press("Enter");
+    await a.page.waitForTimeout(400);
+    expect(await a.page.locator("li.cmt").count()).toBe(before);
+    await expect(a.page.locator(".cmt-compose .err")).toHaveCount(0);
+    await a.ctx.close();
+  });
+
+  test("Enter also posts a reply and saves an edit", async ({ browser }) => {
+    const a = await visitor(browser, "e2");
+    await a.page.goto("/tapes/15");
+    const top = uniq("enterroot");
+    const answer = uniq("enterreply");
+    const changed = uniq("enteredit");
+    await a.page.getByLabel("Your post").fill(top);
+    await a.page.getByLabel("Your post").press("Enter");
+    await expect(item(a.page, top)).toBeVisible();
+    const id = (await item(a.page, top).getAttribute("id"))!;
+    const li = a.page.locator(`#${id}`);
+    await li.getByRole("button", { name: "Reply", exact: true }).first().click();
+    await li.locator(".cmt-reply").getByLabel(/Reply to/).fill(answer);
+    await li.locator(".cmt-reply").getByLabel(/Reply to/).press("Enter");
+    await expect(item(a.page, answer)).toBeVisible();
+    await li.getByRole("button", { name: "Edit", exact: true }).first().click();
+    await li.getByLabel("Edit your post").fill(changed);
+    await li.getByLabel("Edit your post").press("Enter");
+    await expect(item(a.page, changed)).toBeVisible();
+    await a.ctx.close();
+  });
+
+  test("the admin label is a small badge, not a stretched box", async ({ browser }) => {
+    const admin = await asAdmin(browser);
+    await admin.page.goto("/tapes/15");
+    await admin.page.getByLabel("Your post").fill(uniq("adminbadge"));
+    await admin.page.getByLabel("Your post").press("Enter");
+    const tag = admin.page.locator(".tag-admin").first();
+    await expect(tag).toBeVisible();
+    const box = (await tag.boundingBox())!;
+    expect(box.width, "badge width").toBeLessThan(110);
+    expect(box.height, "badge height").toBeLessThan(30);
+    await admin.ctx.close();
+  });
+
   test("guests can read but are asked to sign in to post and vote", async ({ browser }) => {
     const author = await visitor(browser, "g1");
     const text = uniq("guestread");
@@ -94,6 +153,11 @@ test.describe("discussion", () => {
     await li.locator(".cmt-reply").getByLabel(/Reply to/).fill(reply);
     await li.locator(".cmt-reply").getByRole("button", { name: "Reply", exact: true }).click();
     await expect(li.locator(".cmt-children .cmt-body", { hasText: reply })).toBeVisible();
+    // The "All" tab counts replies too, so it matches the number in the heading.
+    const heading = Number((await b.page.locator(".cmt-head h3").textContent())!.match(/\d+/)![0]);
+    const allTab = Number((await b.page.getByRole("button", { name: /^All \d+/ }).textContent())!.match(/\d+/)![0]);
+    expect(allTab).toBe(heading);
+    expect(heading).toBeGreaterThanOrEqual(2);
 
     // Voting: up, same arrow again takes it back, down, and it survives a reload.
     await up(li).click();
@@ -182,9 +246,9 @@ test.describe("discussion", () => {
     await li.getByLabel("Edit your post").fill(edited);
     await li.getByRole("button", { name: "Save" }).click();
     await expect(item(a.page, edited)).toBeVisible();
-    await expect(item(a.page, edited).getByText("edited", { exact: true })).toBeVisible();
+    await expect(item(a.page, edited).getByText("(edited)", { exact: true })).toBeVisible();
     await a.page.reload();
-    await expect(item(a.page, edited).getByText("edited", { exact: true })).toBeVisible();
+    await expect(item(a.page, edited).getByText("(edited)", { exact: true })).toBeVisible();
     await expect(item(a.page, original)).toHaveCount(0);
 
     // Someone replies; deleting the parent leaves a placeholder and keeps the reply.

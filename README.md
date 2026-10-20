@@ -121,7 +121,7 @@ scripts/seed.ts          content reset script
 
 ## Content and credits
 
-*The Mandela Catalogue*, its footage, characters and designs belong to Alex Kister. This project contains none of that artwork and links to the originals. Do not add frames or character art to the seed data or the admin; use links to the source pages (Fandom, IMDb, TV Tropes, TheTVDB, Wikipedia) instead. Unofficial fan project, not affiliated with the series or its creator.
+*The Mandela Catalogue*, its footage, characters and designs belong to Alex Kister. This project stores none of that artwork or footage: the videos play from YouTube's own player (click to load, with a credit under each one) and everything else links to the originals. Do not add frames or character art to the seed data or the admin; use links to the source pages (Fandom, IMDb, TV Tropes, TheTVDB, Wikipedia) instead. Unofficial fan project, not affiliated with the series or its creator.
 
 Episode data comes from the Wikipedia article. Story dates marked "inferred" are interpretations. The film details come only from Wikipedia and are not confirmed in a news outlet.
 

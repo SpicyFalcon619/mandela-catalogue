@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { saveEntity } from "@/app/actions/admin";
 import { getTapes } from "@/lib/content";
 import { sql } from "@/lib/db";
-import { youtubeHref } from "@/lib/youtube";
+import { youtubeHref, youtubeId } from "@/lib/youtube";
 import { count, form, makeUser, redirectOf, resetRequest, signInAs } from "./helpers";
 
 describe("youtubeHref", () => {
@@ -37,6 +37,26 @@ describe("youtubeHref", () => {
   });
 });
 
+describe("youtubeId", () => {
+  it.each([
+    ["https://www.youtube.com/watch?v=q0EpOiu8YkI", "q0EpOiu8YkI"],
+    ["https://youtube.com/watch?v=q0EpOiu8YkI&t=30s", "q0EpOiu8YkI"],
+    ["https://www.youtube.com/watch?feature=share&v=q0EpOiu8YkI", "q0EpOiu8YkI"],
+    ["https://m.youtube.com/watch?v=d--OhKfLcxI", "d--OhKfLcxI"],
+    ["https://youtu.be/q0EpOiu8YkI", "q0EpOiu8YkI"],
+    ["https://youtu.be/q0EpOiu8YkI?t=9", "q0EpOiu8YkI"],
+  ])("reads the id from %s", (url, id) => expect(youtubeId(url)).toBe(id));
+
+  it.each([
+    "https://www.youtube.com/playlist?list=PLkk6ZuwrqcsG1CFuI_kjfOVPunfuJEHwj",
+    "https://www.youtube.com/watch?v=tooshort",
+    "https://www.youtube.com/watch?v=q0EpOiu8YkI_extra_chars",
+    "https://evil.example/watch?v=q0EpOiu8YkI",
+    "javascript:alert(1)",
+    "",
+  ])("gives no id for %j", (url) => expect(youtubeId(url)).toBe(""));
+});
+
 describe("seeded links", () => {
   it("gives every one of the 19 tapes its own valid YouTube watch link", async () => {
     const tapes = await getTapes();
@@ -44,6 +64,20 @@ describe("seeded links", () => {
     const urls = tapes.map((t) => t.youtubeUrl);
     for (const [i, u] of urls.entries()) expect(u, tapes[i].title).toMatch(/^https:\/\/www\.youtube\.com\/watch\?v=[A-Za-z0-9_-]{11}$/);
     expect(new Set(urls).size).toBe(19);
+  });
+
+  it("has an embeddable id and a channel credit for every tape (two are on the affiliated channel)", async () => {
+    const tapes = await getTapes();
+    for (const t of tapes) {
+      expect(t.youtubeId, t.title).toMatch(/^[A-Za-z0-9_-]{11}$/);
+      expect(t.youtubeUrl, t.title).toContain(t.youtubeId);
+      expect(t.youtubeChannel, t.title).not.toBe("");
+    }
+    const genesis = tapes.filter((t) => t.youtubeChannel === "GENESIS APOCRYPHON").map((t) => t.title);
+    expect(genesis).toHaveLength(2);
+    expect(genesis.join(" | ")).toMatch(/Story of Easter/);
+    expect(genesis.join(" | ")).toMatch(/1_19_09/);
+    expect(tapes.filter((t) => t.youtubeChannel === "Alex Kister")).toHaveLength(17);
   });
 
   it("lists the official playlist among the sources", async () => {

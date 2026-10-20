@@ -36,6 +36,13 @@ describe("adding youtube_url to an existing database", () => {
       { id: 2, youtube_url: "" },
       { id: 40, youtube_url: "" },
     ]);
+    // The channel credit column arrived with the same upgrade: filled for the original tapes, blank otherwise.
+    const ch = await sql.all<{ id: number; youtube_channel: string }>("SELECT id, youtube_channel FROM tapes ORDER BY id");
+    expect(ch).toEqual([
+      { id: 1, youtube_channel: "Alex Kister" },
+      { id: 2, youtube_channel: "" },
+      { id: 40, youtube_channel: "" },
+    ]);
     // The column is there for new inserts too.
     await sql.run("INSERT INTO tapes (title, release_date, runtime, youtube_url) VALUES ('x','2031-01-01','1:00','https://youtu.be/abcdefghijk')");
   });

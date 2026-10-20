@@ -2,7 +2,7 @@ import type { Db, Stmt } from "./db";
 import { DEFAULT_SETTINGS } from "./defaults";
 import data from "./seed-data.json";
 
-type RawTape = { id: number; yt: string; t: string; d: string; len: string; main: boolean; iw: string; iws: number | null; c: string; th: string[]; s: string; n: string };
+type RawTape = { id: number; yt: string; ytc: string; t: string; d: string; len: string; main: boolean; iw: string; iws: number | null; c: string; th: string[]; s: string; n: string };
 type RawCase = { n: string; a: string; p: string; ap: number[]; st: string };
 type RawQ = { q: string; o: string[]; a: number; n: string };
 
@@ -128,6 +128,16 @@ export async function backfillYoutubeLinks(d: Db) {
   );
 }
 
+/** Same idea for the channel credit shown with the embedded video. */
+export async function backfillYoutubeChannels(d: Db) {
+  await d.batch(
+    (data.TAPES as RawTape[]).map((x) => ({
+      sql: "UPDATE tapes SET youtube_channel = ? WHERE id = ? AND title = ? AND youtube_channel = ''",
+      args: [x.ytc, x.id, x.t],
+    })),
+  );
+}
+
 /** Wipes content (not users) and loads the original data again, as one transaction. */
 export async function resetContent(d: Db) {
   const wipe: Stmt[] = ["comments", "tapes", "characters", "quiz", "sources", "guide", "cards"].map((t) => ({ sql: `DELETE FROM ${t}` }));
@@ -146,8 +156,8 @@ function contentStatements(): Stmt[] {
   const out: Stmt[] = [];
   for (const x of tapes) {
     out.push({
-      sql: "INSERT INTO tapes (id, title, release_date, runtime, is_main, inworld_label, inworld_sort, confidence, threads, summary, note, youtube_url) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
-      args: [x.id, x.t, x.d, x.len, x.main ? 1 : 0, x.iw, x.iws, x.c, JSON.stringify(x.th), x.s, x.n, x.yt],
+      sql: "INSERT INTO tapes (id, title, release_date, runtime, is_main, inworld_label, inworld_sort, confidence, threads, summary, note, youtube_url, youtube_channel) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+      args: [x.id, x.t, x.d, x.len, x.main ? 1 : 0, x.iw, x.iws, x.c, JSON.stringify(x.th), x.s, x.n, x.yt, x.ytc],
     });
   }
   cases.forEach((x, i) => {

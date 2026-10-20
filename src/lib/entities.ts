@@ -39,6 +39,7 @@ export const ENTITIES: Entity[] = [
       { name: "release_date", label: "Release date (YYYY-MM-DD)", type: "text", required: true, placeholder: "2026-03-13" },
       { name: "runtime", label: "Runtime (m:ss)", type: "text", required: true, placeholder: "26:33" },
       { name: "youtube_url", label: "Link to the original on YouTube", type: "text", placeholder: "https://www.youtube.com/watch?v=...", help: "Optional. Must be a youtube.com or youtu.be link. Shown as a Watch button on the cassette and tape page." },
+      { name: "youtube_channel", label: "YouTube channel (credit)", type: "text", placeholder: "Alex Kister", help: "Shown in the credit under the video, for example Alex Kister or GENESIS APOCRYPHON. Leave blank if it is Alex Kister's main channel." },
       { name: "is_main", label: "Main volume (not a short)", type: "bool" },
       { name: "inworld_label", label: "When it happens in the story", type: "text", placeholder: "2009" },
       { name: "inworld_sort", label: "Story order number (blank = undated)", type: "number", nullable: true, help: "Used by the In-story sort. 1992.3 sorts before 2009.1." },

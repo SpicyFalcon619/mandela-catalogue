@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { sql } from "./db";
 import { DEFAULT_SETTINGS } from "./defaults";
-import { youtubeHref } from "./youtube";
+import { youtubeHref, youtubeId } from "./youtube";
 
 export type Confidence = "stated" | "inferred" | "unknown";
 
@@ -21,6 +21,10 @@ export type Tape = {
   note: string;
   /** Validated https YouTube link, or empty. */
   youtubeUrl: string;
+  /** The 11-character id of that video, or empty. Used for the click-to-play embed. */
+  youtubeId: string;
+  /** Channel credited under the video (empty means Alex Kister's main channel). */
+  youtubeChannel: string;
 };
 export type Character = { id: number; name: string; actor: string; bio: string; status: string; statusHidden: boolean; tapeIds: number[] };
 export type QuizQ = { id: number; question: string; options: string[]; answer: number; note: string };
@@ -53,7 +57,7 @@ export const getSettings = cache(async (): Promise<Settings> => {
 
 type TapeRow = {
   id: number; title: string; release_date: string; runtime: string; is_main: number; inworld_label: string;
-  inworld_sort: number | null; confidence: string; threads: string; summary: string; note: string; youtube_url: string; published: number;
+  inworld_sort: number | null; confidence: string; threads: string; summary: string; note: string; youtube_url: string; youtube_channel: string; published: number;
 };
 function mapTape(r: TapeRow, number: number): Tape {
   return {
@@ -71,6 +75,8 @@ function mapTape(r: TapeRow, number: number): Tape {
     summary: r.summary,
     note: r.note,
     youtubeUrl: youtubeHref(r.youtube_url),
+    youtubeId: youtubeId(r.youtube_url),
+    youtubeChannel: (r.youtube_channel ?? "").trim(),
   };
 }
 

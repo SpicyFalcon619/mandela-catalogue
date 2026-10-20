@@ -370,3 +370,85 @@ test.describe("home page behaviour", () => {
     await ctx.close();
   });
 });
+
+test.describe("original footage", () => {
+  test("a tape page shows the video poster with its credit, and plays from YouTube only after a click", async ({ page }) => {
+    await page.goto("/tapes/1");
+    const vid = page.locator(".vid");
+    await expect(vid).toBeVisible();
+    // Poster is the uploader's thumbnail; nothing from the player is loaded yet.
+    await expect(vid.locator("img")).toHaveAttribute("src", "https://i.ytimg.com/vi/q0EpOiu8YkI/hqdefault.jpg");
+    await expect(vid.locator("iframe")).toHaveCount(0);
+    // Credit line: rights holder, the video it came from, and that it is not hosted here.
+    const credit = vid.locator("figcaption");
+    await expect(credit).toContainText("\u00a9 Alex Kister");
+    await expect(credit).toContainText("The Mandela Catalogue");
+    await expect(credit).toContainText("does not host it");
+    await expect(credit.getByRole("link")).toHaveAttribute("href", "https://www.youtube.com/watch?v=q0EpOiu8YkI");
+    await expect(credit.getByRole("link")).toHaveAttribute("rel", /noopener/);
+    await vid.getByRole("button", { name: /Play the original video/ }).click();
+    const frame = vid.locator("iframe");
+    await expect(frame).toHaveCount(1);
+    await expect(frame).toHaveAttribute("src", /^https:\/\/www\.youtube-nocookie\.com\/embed\/q0EpOiu8YkI\?/);
+    await expect(frame).toHaveAttribute("allowfullscreen", "");
+    await expect(frame).toHaveAttribute("title", /original video on YouTube/);
+  });
+
+  test("tapes on the affiliated channel credit that channel", async ({ page }) => {
+    await page.goto("/tapes/10");
+    await expect(page.locator(".vid figcaption")).toContainText("GENESIS APOCRYPHON");
+    await expect(page.locator(".vid figcaption")).toContainText("\u00a9 Alex Kister");
+    await page.goto("/tapes/13");
+    await expect(page.locator(".vid figcaption")).toContainText("GENESIS APOCRYPHON");
+  });
+
+  test("the home page player shows the video beside the summary, and switching tapes resets it", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto("/");
+    await page.waitForSelector(".tapewrap");
+    const vid = page.locator("#now .vid");
+    await expect(vid).toBeVisible();
+    const sum = (await page.locator("#now .sum").boundingBox())!;
+    const box = (await vid.boundingBox())!;
+    expect(box.x, "video sits to the right of the summary").toBeGreaterThan(sum.x + sum.width - 5);
+    const first = await vid.locator("img").getAttribute("src");
+    await vid.getByRole("button", { name: /Play the original video/ }).click();
+    await expect(vid.locator("iframe")).toHaveCount(1);
+    // Another tape: the old video stops, and the new poster and credit show.
+    await page.locator(".tapewrap", { hasText: "PRESTO" }).locator("button.tape").click();
+    await expect(page.locator("#now h3")).toHaveText(/^presto$/i);
+    await expect(vid.locator("iframe")).toHaveCount(0);
+    await expect(vid.locator("img")).toHaveAttribute("src", "https://i.ytimg.com/vi/Ks-_wIWzZdg/hqdefault.jpg");
+    expect(await vid.locator("img").getAttribute("src")).not.toBe(first);
+    await expect(page.locator("#now .vid figcaption")).toContainText("Presto");
+    // On a phone it stacks under the text and nothing scrolls sideways.
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+    const phoneSum = (await page.locator("#now .sum").boundingBox())!;
+    const phoneVid = (await page.locator("#now .vid").boundingBox())!;
+    expect(phoneVid.y).toBeGreaterThan(phoneSum.y);
+  });
+
+  test("an admin can change the channel credit", async ({ browser }) => {
+    const ctx = await browser.newContext({ baseURL: "http://127.0.0.1:3100" });
+    const page = await ctx.newPage();
+    await page.goto("/login");
+    await page.locator('input[name="username"]').fill(ADMIN.username);
+    await page.locator('input[name="password"]').fill(ADMIN.password);
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page.locator(".who")).toHaveText(ADMIN.username);
+    await page.goto("/admin/tapes/3");
+    await expect(page.locator('input[name="youtube_channel"]')).toHaveValue("Alex Kister");
+    await page.locator('input[name="youtube_channel"]').fill("Some Other Channel");
+    await page.getByRole("button", { name: "Save" }).click();
+    await page.goto("/tapes/3");
+    await expect(page.locator(".vid figcaption")).toContainText("Some Other Channel");
+    // restore it
+    await page.goto("/admin/tapes/3");
+    await page.locator('input[name="youtube_channel"]').fill("Alex Kister");
+    await page.getByRole("button", { name: "Save" }).click();
+    await page.goto("/tapes/3");
+    await expect(page.locator(".vid figcaption")).not.toContainText("Some Other Channel");
+    await ctx.close();
+  });
+});

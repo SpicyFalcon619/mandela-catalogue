@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { fmtDate } from "@/lib/format";
 import { CommentSection } from "@/components/CommentSection";
 import { Stills } from "@/components/Stills";
+import { VideoEmbed } from "@/components/VideoEmbed";
 import { WatchLink } from "@/components/WatchLink";
 import { getUser } from "@/lib/auth";
 import { getCharacters, getSettings, getTape, getTapes } from "@/lib/content";
@@ -36,6 +37,7 @@ export default async function TapePage({ params }: { params: Promise<{ id: strin
         <div>
           <div className="kicker">TAPE {pad(tape.number)} / {tapes.length} · {tape.isMain ? "MAIN VOLUME" : "SHORTER INSTALLMENT"}</div>
           <h1>{tape.title}</h1>
+          {tape.youtubeId && <VideoEmbed id={tape.youtubeId} title={tape.title} watchUrl={tape.youtubeUrl} channel={tape.youtubeChannel} />}
           <p className="sum spoil">{tape.summary}</p>
           {tape.note && <p className="mute">{tape.note}</p>}
           {tape.youtubeUrl && (

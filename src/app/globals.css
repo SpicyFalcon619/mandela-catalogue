@@ -575,3 +575,23 @@ mark { background: color-mix(in srgb, var(--amber) 55%, transparent); color: inh
 .hit { padding: 10px 0; border-top: 1px solid var(--line); }
 .hit a { font: 400 1.4rem/1.1 var(--f-osd); letter-spacing: .03em; }
 .hit .snip { margin: 4px 0 0; color: var(--text-2); max-width: 90ch; font-size: .95rem; }
+
+/* ---- Original footage: YouTube's own player, click to load, with the credit under it ---- */
+.vid { margin: 0 0 20px; max-width: 760px; }
+.vid-frame { position: relative; aspect-ratio: 16 / 9; background: #000; border: 1px solid var(--line); overflow: hidden; }
+.vid-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.vid-poster { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; background: #000; cursor: pointer; display: block; color: #fff; }
+.vid-poster img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: .82; transition: opacity .15s; }
+.vid-poster:hover img, .vid-poster:focus-visible img { opacity: 1; }
+.vid-poster::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(to bottom, rgba(0,0,0,.22) 0 1px, transparent 1px 3px); }
+.vid-play { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 1; display: grid; place-items: center; width: 68px; height: 68px; font-size: 40px; color: #fff; background: rgba(5,6,10,.72); border: 2px solid #fff; text-shadow: 2px 2px 0 #000; }
+.vid-poster:hover .vid-play, .vid-poster:focus-visible .vid-play { background: var(--red); border-color: var(--red); }
+.vid-hint { position: absolute; left: 10px; bottom: 8px; z-index: 1; font: 400 1.25rem/1 var(--f-osd); letter-spacing: .06em; text-transform: uppercase; color: #fff; text-shadow: 2px 2px 0 #000; }
+.vid figcaption { margin-top: 8px; font-size: .78rem; line-height: 1.5; color: var(--mute); max-width: 75ch; }
+.vid figcaption a { color: var(--text-2); }
+.vid.compact { margin: 0; max-width: none; }
+.vid.compact .vid-play { width: 52px; height: 52px; font-size: 30px; }
+.now-body { display: block; }
+.now-body.with-video { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 400px); gap: 8px 28px; align-items: start; }
+.now-video { margin-top: 14px; }
+@media (max-width: 900px) { .now-body.with-video { grid-template-columns: minmax(0, 1fr); } }

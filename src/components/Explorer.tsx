@@ -7,6 +7,7 @@ import { fmtDate } from "@/lib/format";
 import { THREADS } from "@/lib/threads";
 import { usePrefs } from "./PrefsProvider";
 import { Stills } from "./Stills";
+import { VideoEmbed } from "./VideoEmbed";
 import { WatchLink } from "./WatchLink";
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -148,12 +149,21 @@ export function Explorer({ tapes, title, lede, commentCounts = {} }: { tapes: Ta
           </div>
         </div>
         <div className="runbar" title={`Runtime compared with the longest tape (${maxS} seconds)`}><i style={{ width: `${((cur.seconds / maxS) * 100).toFixed(1)}%` }} /></div>
-        <p className="sum spoil" ref={sumRef}>{cur.summary}</p>
-        {cur.note && <p className="note">{cur.note}</p>}
-        <p className="acts">
-          {cur.youtubeUrl && <WatchLink className="btn sm watch" href={cur.youtubeUrl} title={cur.title}>Watch the original</WatchLink>}
-          <Link className="btn sm" href={`/tapes/${cur.id}`}>Open this tape&apos;s page: notes, theories, comments{commentCounts[cur.id] ? ` (${commentCounts[cur.id]})` : ""}</Link>
-        </p>
+        <div className={`now-body${cur.youtubeId ? " with-video" : ""}`}>
+          <div className="now-text">
+            <p className="sum spoil" ref={sumRef}>{cur.summary}</p>
+            {cur.note && <p className="note">{cur.note}</p>}
+            <p className="acts">
+              {cur.youtubeUrl && <WatchLink className="btn sm watch" href={cur.youtubeUrl} title={cur.title}>Watch the original</WatchLink>}
+              <Link className="btn sm" href={`/tapes/${cur.id}`}>Open this tape&apos;s page: notes, theories, comments{commentCounts[cur.id] ? ` (${commentCounts[cur.id]})` : ""}</Link>
+            </p>
+          </div>
+          {cur.youtubeId && (
+            <div className="now-video">
+              <VideoEmbed id={cur.youtubeId} title={cur.title} watchUrl={cur.youtubeUrl} channel={cur.youtubeChannel} compact />
+            </div>
+          )}
+        </div>
         <Stills key={cur.id} tapeId={cur.id} label={`TAPE ${pad(cur.number)}`} />
       </article>
 

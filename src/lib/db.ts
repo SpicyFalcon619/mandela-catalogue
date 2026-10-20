@@ -2,7 +2,7 @@ import type { Client } from "@libsql/client";
 import bcrypt from "bcryptjs";
 import fs from "node:fs";
 import path from "node:path";
-import { backfillYoutubeLinks, seedIfEmpty } from "./seed";
+import { backfillYoutubeChannels, backfillYoutubeLinks, seedIfEmpty } from "./seed";
 
 /**
  * Database access. Everything is async so the same code runs on two drivers:
@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS tapes (
   summary TEXT NOT NULL DEFAULT '',
   note TEXT NOT NULL DEFAULT '',
   youtube_url TEXT NOT NULL DEFAULT '',
+  youtube_channel TEXT NOT NULL DEFAULT '',
   published INTEGER NOT NULL DEFAULT 1
 );
 CREATE TABLE IF NOT EXISTS characters (
@@ -227,6 +228,7 @@ export const sql = {
 /** There is no migration framework: each change to an existing table is a guarded ALTER here. */
 async function migrate(d: Db) {
   if (await addColumn(d, "tapes", "youtube_url", "TEXT NOT NULL DEFAULT ''")) await backfillYoutubeLinks(d);
+  if (await addColumn(d, "tapes", "youtube_channel", "TEXT NOT NULL DEFAULT ''")) await backfillYoutubeChannels(d);
 
   // Comment threads, votes and moderation (added for the discussion upgrade).
   await addColumn(d, "comments", "parent_id", "INTEGER");

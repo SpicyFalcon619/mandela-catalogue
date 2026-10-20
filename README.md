@@ -35,6 +35,7 @@ Other commands:
 ```bash
 npm run build && npm start       # production mode
 npm run typecheck
+npm test                         # access rules, sign-in, comments and moderation
 npm run db:reset                 # wipes content, settings and comments, reloads the original data (accounts are kept)
 ```
 

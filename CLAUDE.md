@@ -5,6 +5,7 @@ Next.js 16 (App Router, TypeScript) fan site for *The Mandela Catalogue*. SQLite
 ## Commands
 - `npm run dev` / `npm run build` / `npm start`
 - `npm run typecheck` (run after every change)
+- `npm test` (Vitest, runs in about 2s; run after touching actions, auth or db)
 - `npm run db:reset` wipes content and reloads the seed (keeps users)
 
 ## Where things are
@@ -27,5 +28,8 @@ Next.js 16 (App Router, TypeScript) fan site for *The Mandela Catalogue*. SQLite
 - Next 16: `params` and `searchParams` are Promises; `cookies()` and `headers()` are async.
 - Sandbox note: Google Fonts cannot be fetched in the dev sandbox, so fonts fall back to monospace there. They load normally for real visitors.
 
-## Tested flows (headless Chromium, production build)
+## Automated tests (`tests/`)
+Server actions are called directly against a throwaway SQLite file. `tests/setup.ts` fakes `next/headers`, `next/navigation` and `next/cache`; `redirect()` throws, and `redirectOf()` in `tests/helpers.ts` reads the target. `admin-authz.test.ts` checks that every export of `actions/admin.ts` rejects anonymous and non-admin callers; it also fails when a new admin action is added without being listed, so add new ones to its `cases()`. The rate limiter is process-wide, so tests that hit it use a distinct `x-forwarded-for` or user.
+
+## Tested flows by hand (headless Chromium, production build)
 Register, login (wrong password), comment, theory moderation, hero text edit, section hide, tape create/validate/delete, display prefs (cookie + account), all admin pages, 404, no horizontal scroll at 390px.

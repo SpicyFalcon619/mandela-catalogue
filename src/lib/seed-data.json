@@ -60,7 +60,7 @@
     "thatcher",
     "gabriel"
    ],
-   "s": "Mark Heathcliff was stalked by Alternates for weeks. Investigator Thatcher Davis calls it paranoia. A Beginner's Bible tape retells Noah's Ark, with Satan promising an Alternate a \"last message\" on the Ark.",
+   "s": "Mark Heathcliff was stalked by Alternates for weeks. Investigator Thatcher Davis concludes Mark was in a prolonged \"paranoid\" state. A Beginner's Bible tape retells Noah's Ark, with Satan saying he will bring another creature, most likely an Alternate, onto the Ark to carry his \"last message.\"",
    "n": "First Beginner's Bible retelling after overthrone."
   },
   {
@@ -94,7 +94,7 @@
     "adam"
    ],
    "s": "Lynn calls Jude about their crying son. Reels cover Mark's death (blamed on an Alternate of Cesar Torres) and the Stanley puppet's \"imaginary friend\" broadcast. Ruth Weaver is killed and Thatcher is attacked.",
-   "n": "The Murray house incident. Adam is the crying child."
+   "n": "The Murray house incident. The crying child is implied to be a young Adam."
   },
   {
    "id": 7,
@@ -290,14 +290,14 @@
    "d": "2026-03-13",
    "len": "26:33",
    "main": true,
-   "iw": "Undated in my sources",
-   "iws": null,
-   "c": "unknown",
+   "iw": "2011 (plus a 2009 scene)",
+   "iws": 2011,
+   "c": "stated",
    "th": [
     "adam",
     "digital"
    ],
-   "s": "Julie, Amanda and Noah discuss Addison's suicide video from Cognitohazard. Adam, in Alternate form, leads Noah and Amanda to a mirror-filled house in the woods. The camcorder dies as Noah flees.",
+   "s": "In 2011, Julie, Amanda and Noah talk about videos, including Addison's death from Cognitohazard. A scene picks up from Presto (2009), where Thatcher talks with Adam. Noah and Amanda go to the mirror-filled house in the woods that Adam described. Adam, in Alternate form, chases Noah out and the camcorder dies.",
    "n": "The most recent main volume as of October 2026."
   }
  ],
@@ -359,7 +359,7 @@
     4,
     6
    ],
-   "st": "Dies in 1992"
+   "st": "Dies in 1992 (inferred)"
   },
   {
    "n": "Jude & Lynn Murray",
@@ -379,7 +379,7 @@
     6,
     7
    ],
-   "st": "Dies in 1992"
+   "st": "Dies in 1992 (inferred)"
   },
   {
    "n": "Jonah Marshall",

@@ -10,7 +10,7 @@ const GUIDE = [
   {
     label: "Alternates",
     widget: "population",
-    body: `Near-immortal shape-shifters. Their goal, as the series presents it, is to wipe out humanity by tormenting people until they die and then taking their identities.
+    body: `Near-immortal shape-shifters. Wikipedia's summary says their goal is to wipe out humanity by torturing people psychologically to the point of suicide. Some also impersonate people, such as Cesar's Alternate and the one that impersonates Thatcher in *every day gets brighter*.
 
 - They work through screens, computers and vehicle GPS, not only in person.
 - Named individuals include the Murray House Alternate, Cesar's Alternate, the Preacher (in the form of an elderly nun) and N.
@@ -48,9 +48,9 @@ const GUIDE = [
   {
     label: "Vocabulary",
     widget: "none",
-    body: `- **M.A.D.:** usually expanded as Metaphysical Awareness Disorder. In *Cognitohazard* a forum user tries to cause it in another. Wikipedia's summary does not define it.
+    body: `- **M.A.D.:** named in *Cognitohazard*, where a forum user tries to cause it in another, and in Wikipedia's entry for Mark Heathcliff, where it drives him to suicide. Wikipedia does not say what the letters stand for, and neither does this guide.
 - **Cognitohazard:** a general fiction term for information that harms you by being perceived. Also the title of a 2025 installment.
-- **T.H.I.N.K. Principle:** appears as the title of a Vol. 5 segment. My sources do not say what it means.
+- **T.H.I.N.K. Principle:** the title of a segment in Vol. 1. Wikipedia says the Alternate N appeared in it before attacking Jude in Vol. 5. My sources do not say what it means.
 - **Flawed / Complete / Overdriven:** the three assimilation types named on a USDTP tape in *interlude*.
 - **Beginner's Bible:** the in-universe children's video series the Bible retellings imitate.
 - **GENESIS APOCRYPHON:** an affiliated channel that hosts short clips such as the Easter clips and *1_19_09 221a*.
@@ -62,12 +62,12 @@ const GUIDE = [
 ];
 
 const CARDS: { kind: string; title: string; body: string }[] = [
-  { kind: "premise", title: "Alternates", body: "Near-immortal shape-shifters that imitate people. They want humanity gone: they torment a person until they die, then take that person's identity. They also work through screens, computers and car GPS." },
+  { kind: "premise", title: "Alternates", body: "Near-immortal shape-shifters that imitate people. They want humanity gone and torture people psychologically to the point of suicide. They also work through screens, computers and car GPS." },
   { kind: "premise", title: "Gabriel", body: "The leader, shown as a false version of the archangel. The series strongly implies he is Satan. The first video, *overthrone*, has him tell shepherds he is their true savior." },
   { kind: "premise", title: "The Intruder", body: "Tied to television and to the abduction of more than 3,000 children. Per Wikipedia it is not an Alternate and is described as an ally. It tells Adam Murray he is an Alternate." },
   { kind: "theme", title: "Identity", body: "If something has your friend's face, voice and memories, what is left that makes it your friend? Adam's story, and the mirror house in Vol. 6, press hardest on this." },
   { kind: "theme", title: "Evidence", body: "The story is told through recordings, and recordings are exactly what the Alternates corrupt. Tapes degrade, broadcasts lie, and a camcorder dies at the worst moment." },
-  { kind: "theme", title: "Faith", body: "Gabriel's impersonation turns a protector into the threat. Kister has said the series reflected his religious doubts and isolation during the COVID-19 pandemic." },
+  { kind: "theme", title: "Faith", body: "Gabriel's impersonation turns a protector into the threat. Per Wikipedia, Kister has said the series began as an outlet for an existential crisis about religion and Christianity, and it was also inspired by the isolation of the COVID-19 pandemic." },
   { kind: "theme", title: "Isolation", body: "Help rarely arrives. The county's population drops from about 15,000 to about 1,000 and the institutions on the tapes (police, hotlines, the county) mostly fail." },
   { kind: "mixup", title: "The Intruder is the main villain.", body: "Gabriel is the leader. The Intruder is described as separate from the Alternates and as an ally, and the two are not established to be the same being." },
   { kind: "mixup", title: "Vol. 4 is mostly Adam and Sarah arguing.", body: "Vol. 4 is a retelling of Genesis. Evelin finds the Stress Assessment tape, Gabriel is revealed as O'Brien and kills Dave Lee, and the Intruder tells Adam he is an Alternate." },
@@ -77,8 +77,8 @@ const CARDS: { kind: string; title: string; body: string }[] = [
   { kind: "reception", title: "Criticism", body: "TLK Magazine praised the worldbuilding but found the voiceover monotone. Vol. 4's green-screen segments drew complaints (Kister says the artificial look is deliberate), and some critics saw overused analog-horror tropes." },
   { kind: "reception", title: "Origin", body: "Kister started it in 2021 at 17 in Richfield, Wisconsin, as his first film project. *overthrone* grew out of a high-school writing project. Thorne Baker wrote *every day gets brighter*, composed the music and voices Thatcher." },
   { kind: "film", title: "May 2025", body: "Kister reveals a screenplay: high-school graduates whose reality unravels after a classmate disappears, mixing live action and found footage." },
-  { kind: "film", title: "July 2026", body: "After a bidding war among 11 studios, United Artists (Amazon MGM Studios), Amblin Entertainment and Paper Street Pictures confirm the project. Kister directs from a script co-written with Tyler Clifton." },
-  { kind: "film", title: "Producers", body: "Steven Spielberg, Scott Stuber and Aaron B. Koontz are attached." },
+  { kind: "film", title: "July 2026", body: "Following a bidding war with 11 other studios, United Artists (Amazon MGM Studios), Amblin Entertainment and Paper Street Pictures confirm the project. Kister directs from a script co-written with Tyler Clifton." },
+  { kind: "film", title: "Producers", body: "Steven Spielberg, Scott Stuber and Aaron B. Koontz, among others, are attached." },
   { kind: "film", title: "September 2026", body: "Release date set for June 9, 2028." },
 ];
 

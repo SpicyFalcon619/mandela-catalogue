@@ -33,7 +33,7 @@ export const DEFAULT_SETTINGS: Record<string, string> = {
     "Where to see the real footage and read more. This site contains no frames or character art from the series; it links to the originals.",
   method_title: "How reliable is this site?",
   method_note:
-    "Episode data comes from a summary of the Wikipedia article. In-world dates marked inferred are interpretations of that summary and the episode titles, not stated facts. Wikipedia's summary uses M.A.D. and the T.H.I.N.K. Principle without defining them, so the glossary says so. Plot summaries describe fiction and may contain mistakes, so check them against the tapes.",
+    "Episode data comes from the Wikipedia article; titles, release dates and runtimes were last checked against its source text on October 20, 2026. In-world dates marked inferred are interpretations of that summary and the episode titles, not stated facts. Wikipedia's summary uses M.A.D. and the T.H.I.N.K. Principle without defining them, so the glossary says so. Plot summaries describe fiction and may contain mistakes, so check them against the tapes.",
   content_note:
     "Content note: the series deals with suicide, child abduction and grief. If any of that is close to home, talking to someone you trust, or a local support line, can help.",
   credit_line:

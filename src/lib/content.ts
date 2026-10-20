@@ -1,5 +1,6 @@
 import { db } from "./db";
 import { DEFAULT_SETTINGS } from "./defaults";
+import { youtubeHref } from "./youtube";
 
 export type Confidence = "stated" | "inferred" | "unknown";
 
@@ -17,6 +18,8 @@ export type Tape = {
   threads: string[];
   summary: string;
   note: string;
+  /** Validated https YouTube link, or empty. */
+  youtubeUrl: string;
 };
 export type Character = { id: number; name: string; actor: string; bio: string; status: string; statusHidden: boolean; tapeIds: number[] };
 export type QuizQ = { id: number; question: string; options: string[]; answer: number; note: string };
@@ -48,7 +51,7 @@ export function getSettings(): Settings {
 
 type TapeRow = {
   id: number; title: string; release_date: string; runtime: string; is_main: number; inworld_label: string;
-  inworld_sort: number | null; confidence: string; threads: string; summary: string; note: string; published: number;
+  inworld_sort: number | null; confidence: string; threads: string; summary: string; note: string; youtube_url: string; published: number;
 };
 function mapTape(r: TapeRow, number: number): Tape {
   return {
@@ -65,6 +68,7 @@ function mapTape(r: TapeRow, number: number): Tape {
     threads: parseJson<string[]>(r.threads, []),
     summary: r.summary,
     note: r.note,
+    youtubeUrl: youtubeHref(r.youtube_url),
   };
 }
 

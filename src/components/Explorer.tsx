@@ -7,6 +7,7 @@ import { fmtDate } from "@/lib/format";
 import { THREADS } from "@/lib/threads";
 import { usePrefs } from "./PrefsProvider";
 import { Stills } from "./Stills";
+import { WatchLink } from "./WatchLink";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -142,7 +143,8 @@ export function Explorer({ tapes, title, lede }: { tapes: Tape[]; title: string;
         <div className="runbar" title={`Runtime compared with the longest tape (${maxS} seconds)`}><i style={{ width: `${((cur.seconds / maxS) * 100).toFixed(1)}%` }} /></div>
         <p className="sum spoil" key={cur.id}>{cur.summary}</p>
         {cur.note && <p className="note">{cur.note}</p>}
-        <p style={{ margin: "10px 0 0" }}>
+        <p className="acts">
+          {cur.youtubeUrl && <WatchLink className="btn sm watch" href={cur.youtubeUrl} title={cur.title}>Watch the original</WatchLink>}
           <Link className="btn sm" href={`/tapes/${cur.id}`}>Open this tape&apos;s page: notes, theories, comments</Link>
         </p>
         <Stills key={cur.id} tapeId={cur.id} label={`TAPE ${pad(cur.number)}`} />
@@ -171,14 +173,17 @@ export function Explorer({ tapes, title, lede }: { tapes: Tape[]; title: string;
       <div className={`shelf${prefs.shelf === "list" ? " list" : ""}`}>
         {shelf.length === 0 && <p className="mute">No tapes match that combination. Try another thread.</p>}
         {shelf.map((t) => (
-          <button key={t.id} type="button" className={`tape${t.isMain ? " main" : ""}`} aria-pressed={t.id === cur.id} onClick={() => { setSel(t.id); document.getElementById("now")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>
-            <div className="lbl">
-              <div className="no"><span>TAPE {pad(t.number)}</span><span>{t.isMain ? "VOL" : "SHORT"}</span></div>
-              <div className="ttl">{t.title}</div>
-              <div className="meta">{sort === "world" ? t.inworldLabel || "Undated" : t.releaseDate.slice(0, 4)} · {t.runtime}</div>
-            </div>
-            <div className="reels"><Reel /><span className="win" /><Reel /></div>
-          </button>
+          <div key={t.id} className="tapewrap">
+            <button type="button" className={`tape${t.isMain ? " main" : ""}`} aria-pressed={t.id === cur.id} onClick={() => { setSel(t.id); document.getElementById("now")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>
+              <div className="lbl">
+                <div className="no"><span>TAPE {pad(t.number)}</span><span>{t.isMain ? "VOL" : "SHORT"}</span></div>
+                <div className="ttl">{t.title}</div>
+                <div className="meta">{sort === "world" ? t.inworldLabel || "Undated" : t.releaseDate.slice(0, 4)} · {t.runtime}</div>
+              </div>
+              <div className="reels"><Reel /><span className="win" /><Reel /></div>
+            </button>
+            {t.youtubeUrl && <WatchLink className="yt" href={t.youtubeUrl} title={t.title} />}
+          </div>
         ))}
       </div>
     </>

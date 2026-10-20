@@ -5,6 +5,7 @@ import { deleteOwnComment } from "@/app/actions/comments";
 import { fmtDate } from "@/lib/format";
 import { CommentForm } from "@/components/CommentForm";
 import { Stills } from "@/components/Stills";
+import { WatchLink } from "@/components/WatchLink";
 import { getUser } from "@/lib/auth";
 import { getCharacters, getSettings, getTape, getTapes } from "@/lib/content";
 import { db } from "@/lib/db";
@@ -66,6 +67,11 @@ export default async function TapePage({ params }: { params: Promise<{ id: strin
           <h1>{tape.title}</h1>
           <p className="sum spoil">{tape.summary}</p>
           {tape.note && <p className="mute">{tape.note}</p>}
+          {tape.youtubeUrl && (
+            <p className="acts">
+              <WatchLink className="btn watch" href={tape.youtubeUrl} title={tape.title}>Watch the original on YouTube</WatchLink>
+            </p>
+          )}
           <Stills tapeId={tape.id} label={`TAPE ${pad(tape.number)}`} />
         </div>
         <aside className="side">

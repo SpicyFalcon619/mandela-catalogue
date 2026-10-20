@@ -228,3 +228,78 @@ test.describe("admin area", () => {
     await ctx.close();
   });
 });
+
+test.describe("home page behaviour", () => {
+  test("pressing the tape filters never moves the page", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/");
+    await page.waitForSelector(".filters");
+    for (const gap of [160, 300]) {
+      for (const label of ["Main volumes", "Shorts", "All 19", "Gabriel", "Alternates", "All", "In-story", "Release"]) {
+        // Put the filter bar `gap` px above the bottom of the viewport, instantly.
+        await page.evaluate((g) => {
+          document.documentElement.style.scrollBehavior = "auto";
+          const f = document.querySelector(".filters")!;
+          window.scrollTo(0, f.getBoundingClientRect().top + window.scrollY - (window.innerHeight - g));
+        }, gap);
+        const before = await page.evaluate(() => ({ y: Math.round(window.scrollY), top: Math.round(document.querySelector(".filters")!.getBoundingClientRect().top) }));
+        await page.getByRole("button", { name: label, exact: true }).first().click();
+        await page.waitForTimeout(250); // let the shelf re-render and any scroll anchoring settle
+        const after = await page.evaluate(() => ({ y: Math.round(window.scrollY), top: Math.round(document.querySelector(".filters")!.getBoundingClientRect().top) }));
+        expect(after, `after clicking "${label}" (bar ${gap}px above the bottom)`).toEqual(before);
+      }
+    }
+  });
+
+  test("the hero shows its readouts", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator(".hero .kicker")).toContainText("Analog horror");
+    await expect(page.locator(".hero .kicker .rec")).toBeVisible();
+    await expect(page.locator(".hero .sub .cap")).toContainText("field guide");
+    const labels = await page.locator(".hero .stats dt").allTextContents();
+    expect(labels).toEqual(["volumes", "shorts", "footage", "released"]);
+    await expect(page.locator(".hero .stats dd").nth(1)).toHaveText("13");
+  });
+
+  test("every cassette links to its original video on YouTube", async ({ page }) => {
+    await page.goto("/");
+    const links = page.locator(".tapewrap a.yt");
+    await expect(links).toHaveCount(19);
+    const hrefs = await links.evaluateAll((as) => as.map((a) => (a as HTMLAnchorElement).href));
+    for (const h of hrefs) expect(h).toMatch(/^https:\/\/www\.youtube\.com\/watch\?v=[A-Za-z0-9_-]{11}$/);
+    expect(new Set(hrefs).size).toBe(19);
+    await expect(links.first()).toHaveAttribute("target", "_blank");
+    await expect(links.first()).toHaveAttribute("rel", /noopener/);
+    await expect(links.first()).toHaveAttribute("aria-label", /Watch .* on YouTube/);
+    // The player card and the tape page offer it too.
+    await expect(page.locator("#now a.watch")).toHaveAttribute("href", /youtube\.com\/watch/);
+    await expect(page.getByRole("link", { name: /^Watch the original/ })).toHaveCount(1);
+    await page.goto("/tapes/1");
+    await expect(page.locator("a.btn.watch")).toHaveAttribute("href", hrefs[0]);
+  });
+
+  test("an admin can set and clear a tape's YouTube link", async ({ browser }) => {
+    const { ctx, page } = await asAdmin(browser);
+    await page.goto("/admin/tapes/new");
+    await page.locator('input[name="title"]').fill(`E2E tape ${run}`);
+    await page.locator('input[name="release_date"]').fill("2031-01-01");
+    await page.locator('input[name="runtime"]').fill("1:00");
+    await page.locator('input[name="youtube_url"]').fill("https://evil.example/x");
+    await page.getByRole("button", { name: "Save" }).click();
+    await expect(page.locator(".flash.bad")).toContainText("YouTube link");
+    await page.goto("/admin/tapes/new");
+    await page.locator('input[name="title"]').fill(`E2E tape ${run}`);
+    await page.locator('input[name="release_date"]').fill("2031-01-01");
+    await page.locator('input[name="runtime"]').fill("1:00");
+    await page.locator('input[name="youtube_url"]').fill("https://youtu.be/abcdefghijk");
+    await page.getByRole("button", { name: "Save" }).click();
+    await expect(page.getByText("Saved.")).toBeVisible();
+    await page.goto("/");
+    await expect(page.locator('.tapewrap a.yt[href="https://youtu.be/abcdefghijk"]')).toHaveCount(1);
+    // Clean up so later runs and other tests see the original 19.
+    await page.goto("/admin/tapes");
+    await page.locator("tr", { hasText: `E2E tape ${run}` }).getByRole("button", { name: "Delete" }).click();
+    await expect(page.getByText("Deleted.")).toBeVisible();
+    await ctx.close();
+  });
+});

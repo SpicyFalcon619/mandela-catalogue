@@ -2,7 +2,7 @@ import type Database from "better-sqlite3";
 import { DEFAULT_SETTINGS } from "./defaults";
 import data from "./seed-data.json";
 
-type RawTape = { id: number; t: string; d: string; len: string; main: boolean; iw: string; iws: number | null; c: string; th: string[]; s: string; n: string };
+type RawTape = { id: number; yt: string; t: string; d: string; len: string; main: boolean; iw: string; iws: number | null; c: string; th: string[]; s: string; n: string };
 type RawCase = { n: string; a: string; p: string; ap: number[]; st: string };
 type RawQ = { q: string; o: string[]; a: number; n: string };
 
@@ -83,6 +83,7 @@ const CARDS: { kind: string; title: string; body: string }[] = [
 ];
 
 const SOURCES = [
+  ["The Mandela Catalogue — official YouTube playlist", "https://www.youtube.com/playlist?list=PLkk6ZuwrqcsG1CFuI_kjfOVPunfuJEHwj", "The original videos, in order. This is the channel link on Wikipedia's page; the per-tape links on this site point into it."],
   ["The Mandela Catalogue — Wikipedia", "https://en.wikipedia.org/wiki/The_Mandela_Catalogue", "Main source for episode dates, lengths, plot summaries, cast, reception and the film."],
   ["The Mandela Catalogue Wiki (Fandom)", "https://mandela-catalogue.fandom.com/wiki/The_Mandela_Catalogue", "Fan wiki with episode pages. Pages did not load when this site was built, so nothing relies on them."],
   ["Alternates — Fandom wiki", "https://mandela-catalogue.fandom.com/wiki/Alternates", "Creature entries and screenshots."],
@@ -105,6 +106,17 @@ export function seedIfEmpty(d: Database.Database) {
   fillContent(d);
 }
 
+/**
+ * Adds the YouTube links to tapes that were seeded before the column existed. Matches on id and title so
+ * tapes an admin edited or added are left alone, and never overwrites a link that is already set.
+ */
+export function backfillYoutubeLinks(d: Database.Database) {
+  const up = d.prepare("UPDATE tapes SET youtube_url = ? WHERE id = ? AND title = ? AND youtube_url = ''");
+  d.transaction(() => {
+    for (const x of data.TAPES as RawTape[]) up.run(x.yt, x.id, x.t);
+  })();
+}
+
 /** Wipes content (not users) and loads the original data again. */
 export function resetContent(d: Database.Database) {
   d.transaction(() => {
@@ -123,9 +135,9 @@ function fillContent(d: Database.Database) {
   const qs = data.QS as RawQ[];
   d.transaction(() => {
     const t = d.prepare(
-      "INSERT INTO tapes (id, title, release_date, runtime, is_main, inworld_label, inworld_sort, confidence, threads, summary, note) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+      "INSERT INTO tapes (id, title, release_date, runtime, is_main, inworld_label, inworld_sort, confidence, threads, summary, note, youtube_url) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
     );
-    for (const x of tapes) t.run(x.id, x.t, x.d, x.len, x.main ? 1 : 0, x.iw, x.iws, x.c, JSON.stringify(x.th), x.s, x.n);
+    for (const x of tapes) t.run(x.id, x.t, x.d, x.len, x.main ? 1 : 0, x.iw, x.iws, x.c, JSON.stringify(x.th), x.s, x.n, x.yt);
 
     const c = d.prepare("INSERT INTO characters (name, actor, bio, status, status_hidden, tape_ids, sort) VALUES (?,?,?,?,?,?,?)");
     cases.forEach((x, i) => {

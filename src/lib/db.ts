@@ -2,7 +2,7 @@ import Database from "better-sqlite3";
 import bcrypt from "bcryptjs";
 import fs from "node:fs";
 import path from "node:path";
-import { seedIfEmpty } from "./seed";
+import { backfillYoutubeLinks, seedIfEmpty } from "./seed";
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS users (
@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS tapes (
   threads TEXT NOT NULL DEFAULT '[]',
   summary TEXT NOT NULL DEFAULT '',
   note TEXT NOT NULL DEFAULT '',
+  youtube_url TEXT NOT NULL DEFAULT '',
   published INTEGER NOT NULL DEFAULT 1
 );
 CREATE TABLE IF NOT EXISTS characters (
@@ -100,10 +101,20 @@ export function db(): Database.Database {
   d.pragma("journal_mode = WAL");
   d.pragma("foreign_keys = ON");
   d.exec(SCHEMA);
+  migrate(d);
   seedIfEmpty(d);
   bootstrapAdmin(d);
   g.__mcdb = d;
   return d;
+}
+
+/** There is no migration framework: each change to an existing table is a guarded ALTER here. */
+function migrate(d: Database.Database) {
+  const cols = d.prepare("PRAGMA table_info(tapes)").all() as { name: string }[];
+  if (!cols.some((c) => c.name === "youtube_url")) {
+    d.exec("ALTER TABLE tapes ADD COLUMN youtube_url TEXT NOT NULL DEFAULT ''");
+    backfillYoutubeLinks(d);
+  }
 }
 
 function bootstrapAdmin(d: Database.Database) {

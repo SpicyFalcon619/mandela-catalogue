@@ -7,11 +7,11 @@ img { max-width: 100%; }
 /* Design tokens. The visitor's theme, font, size and effects choices are data attributes on <html>. */
 :root, :root[data-theme="tape"] {
   --bg: #0a0b10; --panel: #12141c; --panel-2: #181b26; --line: #2a2f3d;
-  --ink: #e7e9f0; --mute: #8d93a6; --text-2: var(--text-2);
+  --ink: #e7e9f0; --mute: #8d93a6; --text-2: #c4c9d9;
   --blue: #2a3cf5; --blue-soft: #7f8cff; --red: #ff3b30; --amber: #ffb800;
   --label: #ebe4d0; --label-ink: #19160f;
-  --screen-2: var(--screen-2); --cell: var(--cell); --cell-line: var(--cell-line); --over: var(--over);
-  --ok-bg: var(--ok-bg); --ok: var(--ok); --bad-bg: var(--bad-bg);
+  --screen-2: #07080d; --cell: #1a1d29; --cell-line: #313649; --over: #0f1119;
+  --ok-bg: #11331f; --ok: #5fd68d; --bad-bg: #3a1613;
   --tv: var(--screen-2); --tv-a: rgba(5,6,10,.86);
   color-scheme: dark;
 }
@@ -21,7 +21,7 @@ img { max-width: 100%; }
   --blue: #0e7a45; --blue-soft: #4dffa0; --red: #ff5a4d; --amber: #d6ff4d;
   --label: #cfe8d3; --label-ink: #07140c;
   --screen-2: #020604; --cell: #12251b; --cell-line: #24402f; --over: #07110c;
-  --ok-bg: #0f3a22; --ok: #4dffa0; --bad-bg: var(--bad-bg);
+  --ok-bg: #0f3a22; --ok: #4dffa0; --bad-bg: #3a1a14;
 }
 :root[data-theme="amber"] {
   --bg: #0b0803; --panel: #15100a; --panel-2: #1d160c; --line: #3a2b14;
@@ -146,8 +146,20 @@ section { padding-top: 72px; }
 
 /* Shelf */
 .shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
-.tape { text-align: left; background: var(--cell); border: 1px solid var(--cell-line); padding: 8px; cursor: pointer; display: flex; flex-direction: column; gap: 8px; min-width: 0; transition: transform .15s, border-color .15s; }
+.tape { text-align: left; background: var(--cell); border: 1px solid var(--cell-line); padding: 8px; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; min-width: 0; transition: transform .15s, border-color .15s; }
 .tape:hover { transform: translateY(-3px); border-color: var(--mute); }
+/* Each cassette is a wrapper so the "watch" link can sit on it without nesting a link inside the button. */
+.tapewrap { position: relative; display: flex; min-width: 0; }
+.tapewrap .tape { flex: 1; }
+.tapewrap:hover .tape { transform: translateY(-3px); border-color: var(--mute); }
+.tapewrap .yt { position: absolute; left: 50%; margin-left: -15px; bottom: 7px; z-index: 1; display: grid; place-items: center; width: 30px; height: 30px; font-size: 1.05rem; color: var(--amber); background: var(--cell); border: 1px solid currentColor; text-decoration: none; transition: transform .15s, background .15s, color .15s; }
+.tapewrap:hover .yt { transform: translateY(-3px); }
+.tapewrap .yt:hover, .tapewrap .yt:focus-visible { background: var(--amber); color: var(--bg); }
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.acts { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 12px 0 0; }
+.btn.watch { display: inline-flex; align-items: center; gap: 8px; border-color: var(--amber); color: var(--amber); }
+.btn.watch:hover, .btn.watch:focus-visible { background: var(--amber); color: var(--bg); }
+.btn.watch svg { flex: none; font-size: 1.15em; }
 .tape[aria-pressed="true"] { border-color: var(--amber); box-shadow: 0 0 0 1px var(--amber); }
 .tape .lbl { background: var(--label); color: var(--label-ink); padding: 8px 9px 9px; min-height: 92px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; border-left: 4px solid var(--blue); }
 .tape.main .lbl { border-left-color: var(--red); }
@@ -276,9 +288,43 @@ body::after { display: none; content: ""; position: fixed; inset: 0; z-index: 60
 .sgrid img { display: block; width: 100%; height: auto; }
 .sgrid > p { grid-column: 1 / -1; }
 .sgrid figure button { position: absolute; top: 4px; right: 4px; background: #000; border: 1px solid var(--ink); color: #fff; width: 26px; height: 26px; cursor: pointer; }
-.hero .kicker { display: inline-block; background: var(--tv-a); padding: 4px 10px; }
-.hero .sub { background: var(--tv-a); color: #fff; padding: 12px 16px; border-left: 3px solid var(--red); }
-.hero .stats { background: var(--tv-a); padding: 10px 14px; width: fit-content; max-width: 100%; }
+/* Hero readouts are drawn like on-screen display text from a camcorder or VCR, not UI cards. The panels
+   behind them stay dark in every theme (the paper theme has a light screen), so the OSD colour is fixed
+   there. */
+.hero { --hud: var(--amber); --hud-dim: #a3a9bd; }
+:root[data-theme="paper"] .hero { --hud: #ffb800; }
+
+/* Camcorder readout: blinking record dot, viewfinder corners, slash between the parts. */
+.hero .kicker { position: relative; display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-bottom: 14px; padding: 8px 30px 8px 20px; font: 400 1.4rem/1 var(--f-osd); letter-spacing: .12em; color: var(--hud); text-shadow: 2px 2px 0 #000; background: linear-gradient(90deg, rgba(5,6,10,.9), rgba(5,6,10,.62) 72%, rgba(5,6,10,0)); }
+.hero .kicker::before, .hero .kicker::after { content: ""; position: absolute; left: 0; width: 10px; height: 10px; border: 0 solid var(--hud); }
+.hero .kicker::before { top: 0; border-top-width: 2px; border-left-width: 2px; }
+.hero .kicker::after { bottom: 0; border-bottom-width: 2px; border-left-width: 2px; }
+.hero .kicker .rec { width: 10px; height: 10px; border-radius: 50%; background: var(--red); box-shadow: 0 0 9px var(--red); animation: blink 1.4s steps(2) infinite; margin-right: 2px; }
+.hero .kicker .sep { color: var(--red); }
+
+/* Closed-caption style: each line of text gets its own dark highlight, with a red tick at its edge. */
+.hero .sub { background: none; color: #fff; padding: 0; border: 0; margin: 24px 0 24px; max-width: 54ch; line-height: 1.86; }
+.hero .sub .cap { background: rgba(5,6,10,.9); padding: .28em .7em; box-shadow: -3px 0 0 var(--red); -webkit-box-decoration-break: clone; box-decoration-break: clone; text-shadow: 1px 1px 0 #000; }
+
+/* Tape-deck counter: segmented cells, glowing digits, small labels underneath. */
+.hero .stats { position: relative; display: flex; flex-wrap: wrap; width: fit-content; max-width: 100%; margin: 0 0 4px; padding: 0; color: var(--hud); border: 1px solid color-mix(in srgb, var(--hud) 38%, transparent); background: repeating-linear-gradient(to bottom, rgba(255,255,255,.04) 0 1px, transparent 1px 3px), rgba(5,6,10,.9); }
+.hero .stats > div { display: flex; flex-direction: column-reverse; gap: 6px; min-width: 104px; padding: 10px 20px 9px; border-left: 1px solid rgba(255,255,255,.12); }
+.hero .stats > div:first-child { border-left: 0; }
+.hero .stats dd { margin: 0; font: 400 2.3rem/1 var(--f-osd); letter-spacing: .04em; font-variant-numeric: tabular-nums; color: var(--hud); text-shadow: 0 0 10px color-mix(in srgb, var(--hud) 55%, transparent), 2px 0 0 color-mix(in srgb, var(--red) 45%, transparent); }
+.hero .stats dt { font: 400 1.05rem/1 var(--f-osd); letter-spacing: .14em; text-transform: uppercase; color: var(--hud-dim); }
+/* Paper theme has a light screen: the dark label backings need light text. */
+:root[data-theme="paper"] .hero .btn:not(.fill) { color: #f7f2e4; border-color: #f7f2e4; }
+:root[data-theme="paper"] .hero .btn:not(.fill):hover { color: #1b1a16; }
+@media (max-width: 520px) {
+  .hero .kicker { padding-right: 22px; font-size: 1.2rem; letter-spacing: .08em; }
+  .hero .kicker span { white-space: nowrap; }
+  .hero .stats dd { font-size: 1.95rem; white-space: nowrap; }
+  .hero .osdc.br { display: none; } /* it collided with the clock at phone width */
+  .hero .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
+  .hero .stats > div { min-width: 0; padding: 9px 14px 8px; }
+  .hero .stats > div:nth-child(odd) { border-left: 0; }
+  .hero .stats > div:nth-child(n+3) { border-top: 1px solid rgba(255,255,255,.12); }
+}
 .hero .btn:not(.fill) { background: var(--tv-a); }
 .hero .btn:not(.fill):hover { background: var(--ink); }
 .hero .btn[aria-pressed="true"] { background: var(--amber); }
@@ -286,7 +332,9 @@ body::after { display: none; content: ""; position: fixed; inset: 0; z-index: 60
 :root[data-fx="low"] .sweep, :root[data-fx="off"] .sweep,
 :root[data-fx="off"] .hero canvas, :root[data-fx="off"] .hero::after { display: none; }
 :root[data-fx="low"] .hero h1, :root[data-fx="off"] .hero h1,
+:root[data-fx="low"] .hero .kicker .rec, :root[data-fx="off"] .hero .kicker .rec,
 :root[data-fx="low"] .reels svg, :root[data-fx="off"] .reels svg { animation: none; }
+:root[data-fx="low"] .hero .stats dd, :root[data-fx="off"] .hero .stats dd { text-shadow: none; }
 :root[data-fx="low"] h2, :root[data-fx="off"] h2,
 :root[data-fx="low"] .hero h1, :root[data-fx="off"] .hero h1,
 :root[data-fx="low"] .hero h1 span, :root[data-fx="off"] .hero h1 span { text-shadow: none; }
@@ -294,7 +342,9 @@ body::after { display: none; content: ""; position: fixed; inset: 0; z-index: 60
 .now .sum { min-height: 8em; }
 .now .row1 { align-items: center; }
 .now .row1 .nav2 { margin: 0; }
-#tapes, #tapes * { overflow-anchor: none; }
+/* Filtering the tape shelf resizes the page below the filter bar. With scroll anchoring on, the browser
+   scrolls to keep some element further down in place, so the filters jump. Turn it off for the page. */
+html { overflow-anchor: none; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -350,6 +400,10 @@ label.bool { display: flex; align-items: center; gap: 8px; font: 400 .95rem/1.3 
 .shelf.list .tape { flex-direction: row; align-items: stretch; }
 .shelf.list .tape .lbl { flex: 1; min-height: 0; flex-direction: row; align-items: center; gap: 16px; }
 .shelf.list .tape .reels { display: none; }
+.shelf.list .tape .lbl { padding-right: 58px; }
+.shelf.list .tape .no { gap: 14px; }
+.shelf.list .tapewrap .yt { left: auto; right: 14px; margin-left: 0; top: 50%; bottom: auto; margin-top: -15px; }
+.shelf.list .tapewrap:hover .yt { transform: translateY(-3px); }
 .shelf.list .tape .ttl { flex: 1; }
 .shelf .seeall { font: 400 1.1rem/1 var(--f-osd); }
 
@@ -406,7 +460,7 @@ label.bool { display: flex; align-items: center; gap: 8px; font: 400 .95rem/1.3 
 .footgrid { display: grid; gap: 8px; }
 .pop .b { background: var(--blue); }
 .pop div:last-child .b { background: var(--red); }
-:root[data-theme="paper"] .hero h1 span { color: #fff; }
+:root[data-theme="paper"] .hero h1 span { color: var(--ink); } /* the screen is light, so white was unreadable */
 :root[data-spoilers="on"] .spoil:not(.rev) { filter: blur(7px); cursor: pointer; user-select: none; }
 .panel.solo { grid-template-columns: minmax(0, 1fr); }
 .hero .btn[aria-pressed="false"].fxbtn { background: var(--tv-a); }

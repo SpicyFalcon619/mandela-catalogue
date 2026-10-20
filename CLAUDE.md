@@ -21,11 +21,14 @@ Next.js 16 (App Router, TypeScript) fan site for *The Mandela Catalogue*. SQLite
 
 ## Rules
 - Admin pages AND admin actions must each call `requireAdmin()`. Layout checks alone are not enough in Next.
-- No schema migrations framework yet: when changing a table, add an `ALTER TABLE ... ADD COLUMN` guarded by a column check in `db()` so existing databases keep working.
+- No schema migrations framework yet: when changing a table, add an `ALTER TABLE ... ADD COLUMN` guarded by a column check in `db()` so existing databases keep working. `migrate()` in `src/lib/db.ts` is where these go (`youtube_url` was the first). `tests/migration.test.ts` shows how to test one against an old-schema file.
 - Do NOT add screenshots, frames, character art or redrawn characters from the series (owner: Alex Kister). Link to the originals.
+- Each tape has an optional `youtube_url` (link only: no embeds, no thumbnails, which would be frames). The 19 seeded links come from the official playlist that Wikipedia links, checked one by one against YouTube's oEmbed on 2026-10-20 (17 on Alex Kister's channel, 2 on the affiliated GENESIS APOCRYPHON channel). Anything rendered as a watch link must pass `youtubeHref()` in `src/lib/youtube.ts` (https, youtube.com or youtu.be only).
 - Facts must trace to a listed source. Mark unconfirmed items ("inferred", "unconfirmed"). Do not define M.A.D. or the T.H.I.N.K. Principle beyond the sources.
 - Keep the content note and the credit line to Alex Kister in the footer (they are site settings).
 - User text is plain text only. Admin text goes through `src/lib/rich.tsx` (bold, italic, http(s) links, lists).
+- Page scroll anchoring is off (`html { overflow-anchor: none }`): the tape filters resize the page below them, and with anchoring on the browser scrolled the page when they were pressed. `e2e/smoke.spec.ts` guards this.
+- Theme tokens in `globals.css` must hold real values. A token defined as itself (`--cell: var(--cell)`) is invalid CSS and silently renders nothing; this had left the default theme without cassette bodies, panel backgrounds and quiz highlight colors.
 - Next 16: `params` and `searchParams` are Promises; `cookies()` and `headers()` are async.
 - Sandbox note: Google Fonts cannot be fetched in the dev sandbox, so fonts fall back to monospace there. They load normally for real visitors.
 

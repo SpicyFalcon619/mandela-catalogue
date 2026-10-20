@@ -7,6 +7,7 @@ import { requireAdmin } from "@/lib/auth";
 import { DEFAULT_SETTINGS, SETTING_FIELDS } from "@/lib/defaults";
 import { entityByKey, type Field } from "@/lib/entities";
 import { resetContent } from "@/lib/seed";
+import { youtubeHref } from "@/lib/youtube";
 
 function readField(f: Field, fd: FormData): { ok: true; value: unknown } | { ok: false; error: string } {
   switch (f.type) {
@@ -60,6 +61,7 @@ export async function saveEntity(entityKey: string, fd: FormData) {
   if (entityKey === "tapes") {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(String(values.release_date))) fail(entityKey, idRaw, "Release date must look like 2026-03-13.");
     if (!/^\d{1,3}:\d{2}$/.test(String(values.runtime))) fail(entityKey, idRaw, "Runtime must look like 26:33.");
+    if (values.youtube_url !== "" && !youtubeHref(String(values.youtube_url))) fail(entityKey, idRaw, "The YouTube link must start with https://www.youtube.com/ or https://youtu.be/.");
   }
   if (entityKey === "sources" && !/^https?:\/\//i.test(String(values.url))) fail(entityKey, idRaw, "URL must start with http:// or https://");
   if (entityKey === "quiz") {

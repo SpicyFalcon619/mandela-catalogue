@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { usePrefs } from "./PrefsProvider";
 
 type Props = {
@@ -82,18 +82,26 @@ export function Hero({ kicker, title1, title2, sub, stats }: Props) {
       <div className="osdc tr" aria-hidden="true">SP · CH 03</div>
       <div className="osdc bl" aria-hidden="true">{stamp}</div>
       <div className="osdc br" aria-hidden="true">TRACKING</div>
-      <div className="kicker">{kicker}</div>
+      <div className="kicker">
+        <i className="rec" aria-hidden="true" />
+        {kicker.split("·").map((part, i) => (
+          <Fragment key={i}>
+            {i > 0 && <span className="sep" aria-hidden="true">/</span>}
+            <span>{part.trim()}</span>
+          </Fragment>
+        ))}
+      </div>
       <h1>
         {title1}
         <span>{title2}</span>
       </h1>
-      <p className="sub">{sub}</p>
-      <div className="stats">
-        <span><b>{stats.mains}</b> volumes</span>
-        <span><b>{stats.shorts}</b> shorts</span>
-        <span><b>{stats.footage}</b> of footage</span>
-        <span><b>{stats.years}</b></span>
-      </div>
+      <p className="sub"><span className="cap">{sub}</span></p>
+      <dl className="stats" aria-label="The series at a glance">
+        <div><dt>volumes</dt><dd>{stats.mains}</dd></div>
+        <div><dt>shorts</dt><dd>{stats.shorts}</dd></div>
+        <div><dt>footage</dt><dd>{stats.footage}</dd></div>
+        <div><dt>released</dt><dd>{stats.years.replace(/(\d)-(\d)/, "$1–$2")}</dd></div>
+      </dl>
       <div className="tools">
         <Link className="btn fill" href="/#tapes">Open the tapes</Link>
         <button type="button" className="btn" aria-pressed={prefs.spoilers} onClick={() => set({ spoilers: !prefs.spoilers })}>

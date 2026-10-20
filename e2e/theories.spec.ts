@@ -8,7 +8,13 @@ test.describe("tape explanations", () => {
     await page.getByRole("button", { name: /Spoiler guard/ }).click();
     await expect(page.locator("html")).toHaveAttribute("data-spoilers", "on");
     await page.goto("/tapes/2");
+    const box = page.locator("details#detail");
     const body = page.locator(".detail-body");
+    // Closed to start with; opens on click and closes again.
+    await expect(box).not.toHaveAttribute("open", "");
+    await expect(body).toBeHidden();
+    await box.locator("summary").click();
+    await expect(box).toHaveAttribute("open", "");
     await expect(body).toBeVisible();
     await expect(body.getByRole("heading", { name: "What it settles" })).toBeAttached();
     await expect(body).not.toHaveClass(/\brev\b/);
@@ -17,6 +23,14 @@ test.describe("tape explanations", () => {
     await expect(body).toHaveClass(/\brev\b/);
     expect(await body.evaluate((el) => getComputedStyle(el).filter)).toBe("none");
     await expect(body).toContainText("Tell an authority figure");
+  });
+
+  test("a link to #detail opens the section", async ({ page }) => {
+    await page.goto("/tapes/2#detail");
+    await expect(page.locator("details#detail")).toHaveAttribute("open", "");
+    await expect(page.locator(".detail-body")).toBeVisible();
+    await page.locator("details#detail summary").click();
+    await expect(page.locator(".detail-body")).toBeHidden();
   });
 
   test("the home page player links to the explanation and does not ship the long text", async ({ page }) => {
@@ -31,7 +45,7 @@ test.describe("tape explanations", () => {
     for (let id = 1; id <= 19; id++) {
       const res = await page.goto(`/tapes/${id}`);
       expect(res?.status(), `tape ${id}`).toBe(200);
-      await expect(page.locator(".detail-body h3.rh").first(), `tape ${id}`).toBeAttached();
+      await expect(page.locator("details#detail .detail-body h3.rh").first(), `tape ${id}`).toBeAttached();
     }
   });
 });

@@ -9,6 +9,7 @@ import { WatchLink } from "@/components/WatchLink";
 import { getUser } from "@/lib/auth";
 import { getCharacters, getSettings, getTape, getTapes, getTheories } from "@/lib/content";
 import { Rich } from "@/lib/rich";
+import { Collapsible } from "@/components/Collapsible";
 import { getThread } from "@/lib/comments";
 
 export const dynamic = "force-dynamic";
@@ -48,12 +49,10 @@ export default async function TapePage({ params }: { params: Promise<{ id: strin
             </p>
           )}
           {tape.detail && (
-            <section className="detail" id="detail" aria-labelledby="detail-h">
-              <div className="kicker">In depth</div>
-              <h2 id="detail-h">The full explanation</h2>
-              <p className="mute spoil-hint">What happens, who is in it, where it fits, what it settles and what it leaves open. It gives away the whole tape, so it stays blurred until you click it.</p>
+            <Collapsible id="detail" kicker="In depth" title="The full explanation" hint="What happens, who is in it, where it fits, what it settles and what it leaves open. Spoilers.">
+              <p className="mute spoil-hint">It gives away the whole tape, so it stays blurred until you click it.</p>
               <div className="detail-body spoil"><Rich text={tape.detail} /></div>
-            </section>
+            </Collapsible>
           )}
           {related.length > 0 && (
             <section className="detail" id="theories" aria-labelledby="theories-h">

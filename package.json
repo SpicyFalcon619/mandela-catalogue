@@ -36,5 +36,6 @@
   "description": "Interactive fan field guide to The Mandela Catalogue, with accounts, comments, an admin area and visitor display settings.",
   "engines": {
     "node": ">=22"
-  }
+  },
+  "license": "MIT"
 }

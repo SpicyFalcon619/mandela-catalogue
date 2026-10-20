@@ -61,7 +61,7 @@ Put it behind HTTPS (Caddy, nginx, or your host's built-in TLS). Back up by copy
 
 Vercel and Netlify functions have no persistent disk, so this version will not keep data there. To use them, swap the data layer in `src/lib/db.ts` and `src/lib/content.ts` for a hosted database such as Postgres or Turso. All SQL lives in those files, the `src/app/actions/` folder and the admin and tape pages.
 
-The Dockerfile has not been built yet, because Docker was not available where this was developed. What was checked: the `output: "standalone"` build it runs (`node server.js`) starts with `NODE_ENV=production`, creates and seeds the database at `DATABASE_PATH`, bootstraps the admin from the environment and serves pages and static files. Run `docker compose up --build` once and confirm the container reports healthy before relying on it. If `npm ci` fails inside the image on `better-sqlite3`, no prebuilt binary matched the platform; install `python3 make g++` in the `deps` stage.
+The Docker image itself has not been built, because Docker was not available where this was developed. Everything the Dockerfile runs was checked on Linux (glibc, x86_64) with Node 22, the version the image uses: `npm ci`, `npm run build`, typecheck, the unit tests, then the `output: "standalone"` server (`node server.js`) with `NODE_ENV=production`. It created and seeded the database at `DATABASE_PATH`, created the admin from the environment, served pages, and passed the same request the `HEALTHCHECK` makes. `better-sqlite3` 13 ships prebuilt binaries for Linux (glibc and musl, x64 and arm64) inside its npm package, so the image needs no compiler and no download during `npm ci`. Run `docker compose up --build` once and confirm the container reports healthy before relying on it.
 A bind-mounted data folder is owned by root and the app runs as `node`; use the named volume from `docker-compose.yml`, or `chown 1000:1000` the folder.
 
 ## Project layout
@@ -92,4 +92,4 @@ scripts/seed.ts          content reset script
 
 Episode data comes from the Wikipedia article. Story dates marked "inferred" are interpretations. The film details come only from Wikipedia and are not confirmed in a news outlet.
 
-No license has been chosen yet. Add one before accepting contributions.
+The code is released under the [MIT License](LICENSE). That covers the code only. It does not cover *The Mandela Catalogue* itself (footage, characters, designs, names), which belongs to Alex Kister and is not licensed by this project.
